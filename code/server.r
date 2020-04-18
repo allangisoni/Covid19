@@ -1,10 +1,15 @@
 rm(list = ls())
+library(scales)
 library(lubridate)
+library(plotly)
 library(tidyr)
 library(dplyr)
+library(DT)
+
+
 #library(ggplot2)
 #library(tidyverse)
-library(plotly)
+
 library(reshape2)
 library(grid)
 library(gridExtra)
@@ -58,17 +63,16 @@ server <- function(input, output) {
     summarize(numofrecoveries = sum(numofrecoveries))
   
   
+  
+  
   plotdata <- formatted_df%>%
     filter(numofdeaths >500  & date == "2020-04-14") %>%
     as_tibble()
   
-  uniquecountries <-formatted_df%>%
-    filter( date == "2020-04-14") %>%
-    select(country, numofdeaths)
   
   summary(plotdata)
   
-  plotdata$country <- as.character(plotdata$country)
+  # plotdata$country <- as.character(plotdata$country)
   
   pt <- ggplot(data=plotdata, aes(x=country, y=numofdeaths, fill=country))+
     geom_bar(stat = "identity", width = 0.3) +
@@ -81,37 +85,13 @@ server <- function(input, output) {
          caption="source:  Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
     theme(axis.text.x = element_text(angle=65, vjust = 0.4), legend.position="none") 
   pt
-  #fig <- ggplotly(pt, tooltip = "text")
-  #fig
+  ggplotly(pt, tooltip = "text")
   
-  
-  
-  
-  plotdata1 <- formatted_df%>%
-    filter(numofdeaths >2000 & date >= "2020-03-14")
-  
-  plotdata1$date <- ymd(plotdata1$date )
-  plotdata1$date <- as.Date(plotdata1$date, format = "%Y-%m-%d" )
-  minn <- min(plotdata1$date)
-  maxx <- max(plotdata1$date)
-  
-  
-  pt2 <- ggplot(plotdata1, aes(date, numofdeaths, col= country))+  
-    geom_line(size=0.6, alpha=0.6) +
-    geom_point()+
-    scale_x_date(breaks = "2 days") +
-    labs(title="Deaths by Date",
-         x= "Date",
-         y= "Num of Deaths",
-         #subtitle="", 
-         caption="source:  Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
-    
-    theme(axis.text.x = element_text(angle=85, vjust=0.5))
-  
-  pt2
+ 
   
   totalofdeaths  <- formatted_df %>%
-    filter(date == "2020-04-14")
+    filter(date == "2020-04-14") %>%
+    as_tibble()
   
   totaldeaths = sum(totalofdeaths$numofdeaths)
   totaldeaths
@@ -142,9 +122,17 @@ server <- function(input, output) {
   totalrecoveries <- sum(recoveryplotdata$numofrecoveries)
   totalrecoveries
   
+  
+  uniquecountries <-formatted_df%>%
+    filter( date == "2020-04-14") %>%
+    select(country, numofdeaths)
+  
   covid_df <- cbind.data.frame(country=uniquecountries$country,  confirmed_cases=confirmedplotdata$numofcases,
                                deaths=uniquecountries$numofdeaths, recoveries=recoveryplotdata$numofrecoveries )
-  covid_df
+  covid_df <- covid_df %>% 
+              rename(Country = country, Confirmed_Cases = confirmed_cases, Deaths=deaths,
+                     Recoveries=recoveries) %>% 
+              mutate(Active =Confirmed_Cases-Deaths-Recoveries)
   
   
   
@@ -175,6 +163,136 @@ server <- function(input, output) {
       color = "green"
     )
   })
+  
+  output$plot1 <- renderPlotly({
+    
+         filcountries <- confirmedplotdata %>% 
+                          top_n(n=5, w=numofcases) 
+                        
+         filcountries <-  as_tibble(filcountries) 
+         print(filcountries)
+         
+        
+        plt1data <-  fom_confirmed_cases %>% 
+                    filter(date >= "2020-03-14" & country == c(filcountries$country)) %>%
+                    arrange(desc(numofcases)) 
+        #%>% 
+                   # filter(country == in (filcountries))
+        print(plt1data)
+    
+    
+      pt2 <- ggplot(plt1data, aes(x=ymd(date), numofcases, col= country, group=1, text = paste0("country:", country, "<br>","confirmed cases:", numofcases,
+                                                                                                "<br>","date:", ymd(date))))+  
+      geom_line()+
+      geom_point() +
+      scale_x_date(labels = date_format("%b-%d"), breaks = "3 days")+
+      #scale_x_date(breaks = "2 days") +
+      labs(title="Confirmed Cases by Date",
+           x= "Date",
+           y= "Cases",
+           subtitle="Top 5 Countries", 
+           caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
+      
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank(),
+            panel.background = element_rect(fill = "#04070c", colour = "#6D9EC1",
+                                            size = 2, linetype = "solid"),
+            panel.grid.minor = element_blank()
+            ) 
+    
+     ggplotly(pt2, tooltip = "text")
+    
+    
+  })
+  
+  output$plot2 <- renderPlotly({ 
+    
+  
+    pltcountry <- totalofdeaths %>% 
+      top_n(n=5, w=numofdeaths) 
+    
+    pltcountry <- as_tibble(pltcountry)
+    print(pltcountry)
+    
+    plotdata1 <- formatted_df%>%
+               filter(date >= "2020-03-14" & country == c(pltcountry$country))
+  
+    print(plotdata1)
+    
+    plotdata1$date <- ymd(plotdata1$date )
+    plotdata1$date <- as.Date(plotdata1$date, format = "%Y-%m-%d" )
+    minn <- min(plotdata1$date)
+    maxx <- max(plotdata1$date)
+    
+    
+    pt2 <- ggplot(plotdata1, aes(date, numofdeaths, col= country, group=1))+  
+      geom_line(size=0.6, alpha=0.6) +
+      geom_point()+
+      scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
+      labs(title="Deaths by Date",
+           x= "Date",
+           y= "Deaths",
+           #subtitle="", 
+           caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
+      
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank())
+    
+    ggplotly(pt2)%>%
+      layout(legend = list(
+        orientation = "h",
+        x=0.5,
+        y=-0.5
+      )
+      )
+    
+    })
+  
+  output$plot3 <- renderPlotly({
+    
+    rpltcountry <- recoveryplotdata %>% 
+      top_n(n=5, w=numofrecoveries) 
+    
+    rpltcountry <- as_tibble(rpltcountry)
+    print(rpltcountry)
+    
+    plotdata2 <- fom_recovery_cases%>%
+      filter(date >= "2020-03-14" & country == c(rpltcountry$country))
+    
+    
+    pt2 <- ggplot(plotdata2, aes(date, numofrecoveries, col= country,group=1, text= paste0("country:", country, "<br>","recoveries:", numofrecoveries,
+                                                                                    "<br>","date:", ymd(date))))+  
+      geom_line(size=0.6, alpha=0.6) +
+      geom_point()+
+      scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
+      labs(title="Recoveries by Date",
+           x= "Date",
+           y= "Recoveries",
+           #subtitle="", 
+           caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
+      
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank())
+    
+    ggplotly(pt2, tooltip="text")%>%
+      layout(legend = list(
+        orientation = "h",
+        x=0.5,
+        y=-0.5
+      )
+      )
+    
+  })
+  
+ coviddt <- datatable(
+    covid_df,
+    options = list(pageLength =10, dom = 'ft',  autoWidth = FALSE,
+                   columnDefs = list(list(width = '160px', 
+                                          targets = c(1,2,3,4,5))))
+    
+    
+  )
+  output$covidtbl <- DT::renderDataTable(coviddt,
+                                         filter = c("none"),
+                                           options = list(pageLength = 5, dom = 't',  autoWidth = FALSE), rownames = FALSE)
+ 
   
 }
 
