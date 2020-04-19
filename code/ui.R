@@ -1,5 +1,6 @@
 library(shiny)
 library(shinydashboard)
+library(shinydashboardPlus)
 library(shinyjs)
 library(shinybusy)
 
@@ -10,8 +11,10 @@ dashboardPage(
                 min = 0, max = 50, value = 3, step = 0.1
     ),
     sidebarMenu(
-      menuItem("Main", tabName = "dashboard"),
-      menuItem("Raw data", tabName = "rawdata")
+      menuItem("Dashboard", tabName = "dashboard", icon = icon("fas fa-tachometer-alt", lib = "font-awesome")),
+      menuItem("Chart", tabName = "chart", icon = icon("fas fa-chart-pie", lib = "font-awesome")),
+      menuItem("Map", tabName = "map",icon = icon("fas fa-globe-africa", lib = "font-awesome"))
+
     )
   ),
   dashboardBody(style="background-color:#203644", 
@@ -21,14 +24,15 @@ dashboardPage(
                 valueBoxOutput("confirmed", width = NULL),
                 valueBoxOutput("deaths", width=NULL),
                 valueBoxOutput("recoveries" , width=NULL)
-                ),   column(9, 
-                            div(withSpinner(plotlyOutput("plot1", height = 350) )))
+                ),   column(9,
+                         gradientBox(
+                           title = "Confirmed Cases",width =12, gradientColor = "teal", closable = FALSE, boxToolSize="sm", footer = withSpinner(plotlyOutput("plot1", height = 350)),"Since January"))
              ,style="background-color:#203644" ),
              
              fluidRow(column(width=6,
-                             div(withSpinner(plotlyOutput("plot2", height = 350) ))),
+                             gradientBox(title = "Confirmed Deaths", width =12, gradientColor = "teal", closable = FALSE, boxToolSize="sm", footer = withSpinner(plotlyOutput("plot2", height = 350)), "Top 5 countries" )),
                       column(width=6,
-                             div(withSpinner(plotlyOutput("plot3", height = 350) )))),
+                             gradientBox(title = "Confirmed Recoveries", width =12, gradientColor = "teal", closable = FALSE, boxToolSize="sm", footer = withSpinner(plotlyOutput("plot3", height = 350)), "Top 5 countries" ))),
              fluidRow( style="margin-top:16px",
                column(12,
                       box(
@@ -40,7 +44,7 @@ dashboardPage(
              
              
       ),
-      tabItem("rawdata",
+      tabItem("map",
               numericInput("maxrows", "Rows to show", 25),
               verbatimTextOutput("rawtable"),
               downloadButton("downloadCsv", "Download as CSV")

@@ -16,9 +16,9 @@ library(gridExtra)
 
 options(scipen = 999)
 
-#setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
+setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
 getwd()
-setwd("C:\\Users\\85036758\\Documents\\Covid19\\")
+#setwd("C:\\Users\\85036758\\Documents\\Covid19\\")
 df <- read.csv("data\\deaths.csv", header = TRUE, stringsAsFactors = FALSE)
 confirmed_cases <- read.csv("data\\covid19_confirmed.csv", header = TRUE, stringsAsFactors = FALSE)
 recovery_cases <- read.csv("data\\covid19_recovered.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -140,7 +140,7 @@ server <- function(input, output) {
     valueBox(
       value = totalconfirmedcases,
       subtitle = "Total confirmed cases",
-      icon = icon("area-chart"),
+      icon = icon("fas fa-lightbulb","fa-xs", lib="font-awesome"),
       color = "yellow"
     )
   })
@@ -150,7 +150,7 @@ server <- function(input, output) {
     valueBox(
       value = totaldeaths,
       subtitle = "Total deaths ",
-      icon = icon("area-chart"),
+      icon = icon("fas fa-exclamation-triangle", "fa-xs", lib="font-awesome"),
       color = "red"
     )
   })
@@ -159,7 +159,7 @@ server <- function(input, output) {
     valueBox(
       value = totalrecoveries,
       subtitle = "Total Recoveries ",
-      icon = icon("area-chart"),
+      icon = icon("fas fa-heartbeat","fa-xs",lib="font-awesome"),
       color = "green"
     )
   })
@@ -174,29 +174,37 @@ server <- function(input, output) {
          
         
         plt1data <-  fom_confirmed_cases %>% 
-                    filter(date >= "2020-03-14" & country == c(filcountries$country)) %>%
+                    #filter(date >= "2020-03-14" & country == c(filcountries$country)) %>%
+                    filter(date >= "2020-03-14" & country == c("US")) %>%
                     arrange(desc(numofcases)) 
         #%>% 
                    # filter(country == in (filcountries))
         print(plt1data)
     
+        pltconfirmdata <- fom_confirmed_cases %>% 
+          filter(date >= "2020-01-22") %>%
+          group_by(date) %>% 
+          summarise(numofconfirmedcases= sum(numofcases))
+        
     
-      pt2 <- ggplot(plt1data, aes(x=ymd(date), numofcases, col= country, group=1, text = paste0("country:", country, "<br>","confirmed cases:", numofcases,
-                                                                                                "<br>","date:", ymd(date))))+  
-      geom_line()+
-      geom_point() +
-      scale_x_date(labels = date_format("%b-%d"), breaks = "3 days")+
+      pt2 <- ggplot(pltconfirmdata, aes(x=ymd(date), numofconfirmedcases, col= "#e6f2ff", group=1, text = paste0("confirmed cases:", numofconfirmedcases,
+       
+                                                                                              "<br>","date:", ymd(date))))+  
+      geom_area(fill="#e6f2ff", col= "#e6f2ff") + 
+      geom_line(col= "#80bfff")+
+      geom_point(col= "#001a33") +
+      scale_x_date(labels = date_format("%b-%d"), breaks = "7 days")+
       #scale_x_date(breaks = "2 days") +
-      labs(title="Confirmed Cases by Date",
+      labs(#title="Confirmed Cases by Date",
            x= "Date",
            y= "Cases",
-           subtitle="Top 5 Countries", 
+           #subtitle="Top 5 Countries", 
            caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
       
-      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank(),
-            panel.background = element_rect(fill = "#04070c", colour = "#6D9EC1",
-                                            size = 2, linetype = "solid"),
-            panel.grid.minor = element_blank()
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
+            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
+                                            size = 2, linetype = "dashed"),
+            panel.grid.major.x= element_blank()
             ) 
     
      ggplotly(pt2, tooltip = "text")
@@ -224,19 +232,24 @@ server <- function(input, output) {
     maxx <- max(plotdata1$date)
     
     
-    pt2 <- ggplot(plotdata1, aes(date, numofdeaths, col= country, group=1))+  
+    pt2 <- ggplot(plotdata1, aes(date, numofdeaths, col= country, group=1,
+                                 text= paste0("country:", country, "<br>","deaths:", numofdeaths,
+                                              "<br>","date:", ymd(date))))+  
       geom_line(size=0.6, alpha=0.6) +
       geom_point()+
       scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
-      labs(title="Deaths by Date",
+      labs(#title="Deaths by Date",
            x= "Date",
            y= "Deaths",
            #subtitle="", 
            caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
       
-      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank())
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank(),
+            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
+                                            size = 2, linetype = "dashed"),
+            panel.grid.major.x= element_blank())
     
-    ggplotly(pt2)%>%
+    ggplotly(pt2, tooltip = "text")%>%
       layout(legend = list(
         orientation = "h",
         x=0.5,
@@ -263,13 +276,16 @@ server <- function(input, output) {
       geom_line(size=0.6, alpha=0.6) +
       geom_point()+
       scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
-      labs(title="Recoveries by Date",
+      labs(#title="Recoveries by Date",
            x= "Date",
            y= "Recoveries",
            #subtitle="", 
            caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
       
-      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank())
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank(),
+            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
+                                            size = 2, linetype = "dashed"),
+            panel.grid.major.x= element_blank())
     
     ggplotly(pt2, tooltip="text")%>%
       layout(legend = list(

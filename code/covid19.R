@@ -10,9 +10,11 @@ library(reshape2)
 library(grid)
 library(gridExtra)
 
+packageVersion("plotly")
+
 options(scipen = 999)
 
-#setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
+setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
 getwd()
 
 df <- read.csv("data\\deaths.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -125,6 +127,13 @@ totaldeaths
 confirmedplotdata <- fom_confirmed_cases %>% 
                      filter(date == "2020-04-14") %>%
                      as_tibble()
+
+pltconfirmdata <- fom_confirmed_cases %>% 
+              filter(date >= "2020-03-14") %>%
+              group_by(date) %>% 
+              summarise(numofconfirmedcases= sum(numofcases))
+pltconfirmdata
+  
 
 confirmedplotdata  
 totalconfirmedcases <- sum(confirmedplotdata$numofcases)

@@ -23,6 +23,7 @@ library(grid)
 library(gridExtra)
 
 getwd()
-setwd("C:\\Users\\85036758\\Documents\\Covid19\\code")
+#setwd("C:\\Users\\85036758\\Documents\\Covid19\\code")
+setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\code")
 runApp()
 
