@@ -152,4 +152,38 @@ totalrecoveries
 
 covid_df <- cbind.data.frame(country=uniquecountries$country,  confirmed_cases=confirmedplotdata$numofcases,
                              deaths=uniquecountries$numofdeaths, recoveries=recoveryplotdata$numofrecoveries )
+
+covid_df <- covid_df %>% 
+  rename(Country = country, Confirmed_Cases = confirmed_cases, Deaths=deaths,
+         Recoveries=recoveries) %>% 
+  mutate(Active =Confirmed_Cases-Deaths-Recoveries) %>% 
+  filter(Country=="Kenya")
 covid_df
+
+covid_df <- covid_df %>% 
+           gather(category, values,Confirmed_Cases:Active , convert = TRUE)
+
+
+# Compute percentages
+covid_df$fract =100/4
+
+# Compute the cumulative percentages (top of each rectangle)
+covid_df$ymax = cumsum(covid_df$fract)
+
+# Compute the bottom of each rectangle
+covid_df$ymin = c(0, head(covid_df$ymax, n=-1))
+
+# Compute label position
+covid_df$labelPosition <- (covid_df$ymax + covid_df$ymin) / 2
+
+# Compute a good label
+covid_df$label <- paste0(covid_df$category, "\n count: ", covid_df$values)
+
+# Make the plot
+ggplot(covid_df, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
+  geom_rect() +
+  geom_label( x=3.5, aes(y=labelPosition, label=label), size=3) +
+  scale_fill_brewer(palette="RdBu") +
+  coord_polar(theta="y") +
+  xlim(c(2, 4)) + theme_void()+ theme(legend.position = "none")
+

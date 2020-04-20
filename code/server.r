@@ -13,6 +13,8 @@ library(DT)
 library(reshape2)
 library(grid)
 library(gridExtra)
+library(treemapify)
+library(directlabels)
 
 options(scipen = 999)
 
@@ -196,7 +198,7 @@ server <- function(input, output) {
       scale_x_date(labels = date_format("%b-%d"), breaks = "7 days")+
       #scale_x_date(breaks = "2 days") +
       labs(#title="Confirmed Cases by Date",
-           x= "Date",
+           x= "",
            y= "Cases",
            #subtitle="Top 5 Countries", 
            caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
@@ -239,7 +241,7 @@ server <- function(input, output) {
       geom_point()+
       scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
       labs(#title="Deaths by Date",
-           x= "Date",
+           x= "",
            y= "Deaths",
            #subtitle="", 
            caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
@@ -277,7 +279,7 @@ server <- function(input, output) {
       geom_point()+
       scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
       labs(#title="Recoveries by Date",
-           x= "Date",
+           x= "",
            y= "Recoveries",
            #subtitle="", 
            caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
@@ -297,18 +299,208 @@ server <- function(input, output) {
     
   })
   
- coviddt <- datatable(
+  coviddt <- datatable(
     covid_df,
     options = list(pageLength =10, dom = 'ft',  autoWidth = FALSE,
                    columnDefs = list(list(width = '160px', 
                                           targets = c(1,2,3,4,5))))
     
-    
   )
   output$covidtbl <- DT::renderDataTable(coviddt,
                                          filter = c("none"),
                                            options = list(pageLength = 5, dom = 't',  autoWidth = FALSE), rownames = FALSE)
- 
+  output$plot4 <- renderPlotly({
+    
+    
+    plotdata2 <- fom_confirmed_cases%>%
+      filter(country == c("Kenya"))
+    
+    
+    pt2 <- ggplot(plotdata2, aes(date, numofcases, group=1, text= paste0( "date:", ymd(date),
+                                                                                            "<br>","confirmed cases:", numofcases )))+  
+      geom_line(size=0.6, alpha=0.6, col= "#66b3ff") +
+      geom_point(col= "#66b3ff")+
+      scale_x_date(breaks = "7 days", labels = date_format("%b-%d")) +
+      labs(#title="Recoveries by Date",
+        x= "",
+        y= "Recoveries",
+        #subtitle="", 
+        caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
+      
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
+            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
+                                            size = 2, linetype = "solid"),
+            panel.grid.major.x= element_blank())
+    
+    ggplotly(pt2, tooltip="text")%>%
+      layout(legend = list(
+        orientation = "h",
+        x=0.5,
+        y=-0.5
+      )
+      )
+    
+  })
+  
+  output$plot5 <- renderPlot({
+    covid_df <-covid_df %>% 
+      filter(Country=="Kenya")
+    
+    covid_df <- covid_df %>% 
+      gather(category, values,Confirmed_Cases:Active , convert = TRUE)
+    
+    
+    # Compute percentages
+    covid_df$fract =100/4
+    
+    # Compute the cumulative percentages (top of each rectangle)
+    covid_df$ymax = cumsum(covid_df$fract)
+    
+    # Compute the bottom of each rectangle
+    covid_df$ymin = c(0, head(covid_df$ymax, n=-1))
+    
+    # Compute label position
+    covid_df$labelPosition <- (covid_df$ymax + covid_df$ymin) / 2
+    
+    # Compute a good label
+    covid_df$label <- paste0(covid_df$category, "\n count: ", covid_df$values)
+    
+    # Make the plot
+    donutplot<- ggplot(covid_df, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
+      geom_rect() +
+      geom_label( x=3.5, aes(y=labelPosition, label=label), size=3) +
+      scale_fill_brewer(palette=4) +
+      coord_polar(theta="y") +
+      xlim(c(2, 4)) + theme_void()+ theme(legend.position = "none")
+    donutplot 
+    #ggplotly(donutplot)
+  })
+  
+  covid_df <-covid_df %>% 
+    filter(Country=="Kenya")
+  output$kenya_confirmed <- renderValueBox({
+    valueBox(
+      value = covid_df$Confirmed_Cases,
+      subtitle = "Confirmed cases ",
+      icon = icon("fas fa-lightbulb","fa-xs",lib="font-awesome"),
+      color = "yellow"
+    )
+  })
+  output$kenya_deaths <- renderValueBox({
+    valueBox(
+      value = covid_df$Deaths,
+      subtitle = "Deaths ",
+      icon = icon("fas fa-exclamation-triangle", "fa-xs", lib="font-awesome"),
+      color = "red"
+    )
+  })
+  output$kenya_recoveries <- renderValueBox({
+    valueBox(
+      value = covid_df$Recoveries,
+      subtitle = "Recoveries ",
+      icon = icon("fas fa-heartbeat","fa-xs",lib="font-awesome"),
+      color = "green"
+    )
+  })
+  output$kenya_active <- renderValueBox({
+    valueBox(
+      value = covid_df$Active,
+      subtitle = "Active cases ",
+      icon = icon("fas fa-spa","fa-xs",lib="font-awesome"),
+      color = "navy"
+    )
+  })
+  
+  output$plot6 <- renderPlotly({
+    kenyaplotdata <- formatted_df%>%
+      filter( country == "Kenya")
+    
+    kenyapt <- ggplot(kenyaplotdata, aes(date, numofdeaths, group=1,
+                                 text= paste0("date:", ymd(date),
+                                              "<br>","deaths:", numofdeaths)))+  
+      geom_area(fill="#e6f2ff", col= "#e6f2ff") + 
+      geom_line(size=0.6, alpha=0.6,col= "#66b3ff") +
+      geom_point(col= "#66b3ff")+
+      scale_x_date(breaks = "7 days", labels = date_format("%b-%d")) +
+      labs(#title="Deaths by Date",
+        x= "",
+        y= "Deaths",
+        #subtitle="", 
+        caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
+      
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
+            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
+                                            size = 2, linetype = "dashed"),
+            panel.grid.major.x= element_blank())
+    
+    ggplotly(kenyapt, tooltip = "text")%>%
+      layout(legend = list(
+        orientation = "h",
+        x=0.5,
+        y=-0.5
+      )
+      )
+  })
+  
+  output$plot7 <- renderPlot({
+    
+    pltworlddata <- fom_confirmed_cases %>% 
+      filter(date >= "2020-04-14") 
+    
+  
+     ggplot(pltworlddata, aes(area = numofcases, fill=country, label = country)) +
+      geom_treemap()+
+     geom_treemap_text(fontface = "italic", colour = "white", place = "centre",
+                        grow = FALSE) +
+    theme(legend.position = "none")
+        
+    
+    
+   
+     
+
+  })
+  
+  output$plot8 <- renderPlotly({
+    
+    
+                
+    dminn <-as.Date("2020-01-23", format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-04-20", format = "%Y-%m-%d")
+    pt8 <- ggplot(fom_recovery_cases, aes(date, numofrecoveries, col=country,group=1, text= paste0( "date:", ymd(date),
+                                                                          "<br>","country:", country,                                    
+                                                                          "<br>","recoveries:", numofrecoveries )))+  
+      geom_line(size=0.6, alpha=0.6) +
+      geom_point()+
+      scale_x_date(breaks = "7 days",limits=c(dminn,dmaxx), labels = date_format("%b-%d")) +
+      labs(#title="Recoveries by Date",
+        x= "",
+        y= "Recoveries",
+        #subtitle="", 
+        caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
+      
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
+            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
+                                            size = 2, linetype = "solid"),
+            panel.grid.major.x= element_blank())
+    #pt8
+     ptdl8 <-direct.label(pt8,method="last.points" )
+    
+    
+   
+    ggplotly(ptdl8, tooltip="text")%>%
+      layout(legend = list(
+        orientation = "h",
+        x=0.5,
+        y=-0.5
+      )
+      )
+    
+  })
+  
+  output$plot9 <- renderPlotly({
+    
+  })
   
 }
 
