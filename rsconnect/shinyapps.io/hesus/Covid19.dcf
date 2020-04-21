@@ -1,0 +1,12 @@
+name: Covid19
+title: Covid19
+username:
+account: hesus
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2160083
+bundleId: 3046263
+url: https://hesus.shinyapps.io/Covid19/
+when: 1587501169.94668
+asMultiple: FALSE
+asStatic: FALSE

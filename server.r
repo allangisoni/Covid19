@@ -15,15 +15,16 @@ library(grid)
 library(gridExtra)
 library(treemapify)
 library(directlabels)
+library(rsconnect)
 
 options(scipen = 999)
 
 #setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
-getwd()
+#getwd()
 #setwd("C:\\Users\\85036758\\Documents\\Covid19\\")
-df <- read.csv("data\\deaths.csv", header = TRUE, stringsAsFactors = FALSE)
-confirmed_cases <- read.csv("data\\covid19_confirmed.csv", header = TRUE, stringsAsFactors = FALSE)
-recovery_cases <- read.csv("data\\covid19_recovered.csv", header = TRUE, stringsAsFactors = FALSE)
+df <- read.csv("data/deaths.csv", header = TRUE, stringsAsFactors = FALSE)
+confirmed_cases <- read.csv("data/confirmed.csv", header = TRUE, stringsAsFactors = FALSE)
+recovery_cases <- read.csv("data/recovered.csv", header = TRUE, stringsAsFactors = FALSE)
 print(df)
 print(confirmed_cases)
 
@@ -31,7 +32,7 @@ server <- function(input, output) {
   
   
   formatted_df <- df %>%
-    gather(date, numofdeaths, 'X43852':'X43935', convert = TRUE) %>%
+    gather(date, numofdeaths, 'X43852':'X43941', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -44,7 +45,7 @@ server <- function(input, output) {
   summary(formatted_df)
   
   fom_confirmed_cases<- confirmed_cases %>%
-    gather(date, numofcases, 'X43852':'X43935', convert = TRUE) %>%
+    gather(date, numofcases, 'X43852':'X43941', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -55,7 +56,7 @@ server <- function(input, output) {
   
   
   fom_recovery_cases<- recovery_cases %>%
-    gather(date, numofrecoveries, 'X43852':'X43935', convert = TRUE) %>%
+    gather(date, numofrecoveries, 'X43852':'X43941', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -68,7 +69,7 @@ server <- function(input, output) {
   
   
   plotdata <- formatted_df%>%
-    filter(numofdeaths >500  & date == "2020-04-14") %>%
+    filter(numofdeaths >2000  & date == "2020-04-20") %>%
     as_tibble()
   
   
@@ -92,7 +93,7 @@ server <- function(input, output) {
  
   
   totalofdeaths  <- formatted_df %>%
-    filter(date == "2020-04-14") %>%
+    filter(date == "2020-04-20") %>%
     as_tibble()
   
   totaldeaths = sum(totalofdeaths$numofdeaths)
@@ -106,7 +107,7 @@ server <- function(input, output) {
   # CONFIRMED CASES
   
   confirmedplotdata <- fom_confirmed_cases %>% 
-    filter(date == "2020-04-14") %>%
+    filter(date == "2020-04-20") %>%
     as_tibble()
   
   confirmedplotdata  
@@ -117,7 +118,7 @@ server <- function(input, output) {
   # RECOVERY CASES
   
   recoveryplotdata <- fom_recovery_cases %>%
-    filter(date == "2020-04-14") %>%
+    filter(date == "2020-04-20") %>%
     as_tibble()
   recoveryplotdata
   
@@ -126,7 +127,7 @@ server <- function(input, output) {
   
   
   uniquecountries <-formatted_df%>%
-    filter( date == "2020-04-14") %>%
+    filter( date == "2020-04-20") %>%
     select(country, numofdeaths)
   
   covid_df <- cbind.data.frame(country=uniquecountries$country,  confirmed_cases=confirmedplotdata$numofcases,
@@ -165,6 +166,14 @@ server <- function(input, output) {
       color = "green"
     )
   })
+  output$active <- renderValueBox({
+    valueBox(
+      value =  prettyNum(totalconfirmedcases-totaldeaths-totalrecoveries,big.mark=",",scientific=FALSE),
+      subtitle = "Active ",
+      icon = icon("fas fa-spa","fa-xs",lib="font-awesome"),
+      color = "navy"
+    )
+  })
   
   output$plot1 <- renderPlotly({
     
@@ -177,10 +186,9 @@ server <- function(input, output) {
         
         plt1data <-  fom_confirmed_cases %>% 
                     #filter(date >= "2020-03-14" & country == c(filcountries$country)) %>%
-                    filter(date >= "2020-03-14" & country == c("US")) %>%
+                    filter(date >= "2020-03-20" & country == c("US")) %>%
                     arrange(desc(numofcases)) 
-        #%>% 
-                   # filter(country == in (filcountries))
+       
         print(plt1data)
     
         pltconfirmdata <- fom_confirmed_cases %>% 
@@ -220,14 +228,14 @@ server <- function(input, output) {
   output$plot2 <- renderPlotly({ 
     
   
-    pltcountry <- totalofdeaths %>% 
+    pltcountry <-as.data.frame(totalofdeaths) %>% 
       top_n(n=5, w=numofdeaths) 
     
     pltcountry <- as_tibble(pltcountry)
     print(pltcountry)
     
     plotdata1 <- formatted_df%>%
-               filter(date >= "2020-03-14" & country == c(pltcountry$country))
+               filter(date >= "2020-03-20" & country %in% c(pltcountry$country))
   
     print(plotdata1)
     
@@ -267,14 +275,14 @@ server <- function(input, output) {
   
   output$plot3 <- renderPlotly({
     
-    rpltcountry <- recoveryplotdata %>% 
+    rpltcountry <- as.data.frame( recoveryplotdata) %>% 
       top_n(n=5, w=numofrecoveries) 
     
     rpltcountry <- as_tibble(rpltcountry)
     print(rpltcountry)
     
     plotdata2 <- fom_recovery_cases%>%
-      filter(date >= "2020-03-14" & country == c(rpltcountry$country))
+      filter(date >= "2020-03-20" & country %in% c(rpltcountry$country))
     
     
     pt2 <- ggplot(plotdata2, aes(date, numofrecoveries, col= country,group=1, text= paste0("country:", country, "<br>","recoveries:", numofrecoveries,
@@ -456,7 +464,7 @@ server <- function(input, output) {
   output$plot7 <- renderPlot({
     
     pltworlddata <- fom_confirmed_cases %>% 
-      filter(date >= "2020-04-14") 
+      filter(date >= "2020-04-20") 
     
   
      ggplot(pltworlddata, aes(area = numofcases, fill=country, label = country)) +
@@ -467,18 +475,34 @@ server <- function(input, output) {
         
     
     
-   
+
      
 
   })
   
+  
+  
   output$plot8 <- renderPlotly({
+    
+   
+    
+    country_rnum <- input$slider_rcountry
+    print(country_rnum)
+    
+    slt_rcountry <-as.data.frame(recoveryplotdata) %>% 
+      top_n(n=country_rnum, w=numofrecoveries) 
+    
+    slt_rcountry <- as_tibble(slt_rcountry)
+    
+    
+    plotworldrecoveries <- fom_recovery_cases%>%
+      filter(country %in% c(slt_rcountry$country))
     
     
                 
     dminn <-as.Date("2020-01-23", format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-04-20", format = "%Y-%m-%d")
-    pt8 <- ggplot(fom_recovery_cases, aes(date, numofrecoveries, col=country,group=1, text= paste0( "date:", ymd(date),
+    dmaxx <-as.Date("2020-04-25", format = "%Y-%m-%d")
+    pt8 <- ggplot(plotworldrecoveries, aes(date, numofrecoveries, col=country,group=1, text= paste0( "date:", ymd(date),
                                                                           "<br>","country:", country,                                    
                                                                           "<br>","recoveries:", numofrecoveries )))+  
       geom_line(size=0.6, alpha=0.6) +
@@ -510,15 +534,32 @@ server <- function(input, output) {
     
   })
   
+
+  
   output$plot9 <- renderPlotly({
     dminn <-as.Date("2020-01-23", format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-04-20", format = "%Y-%m-%d")
-    pt9 <- ggplot(formatted_df, aes(date, numofdeaths, col=country,group=1, text= paste0( "date:", ymd(date),
+    dmaxx <-as.Date("2020-04-25", format = "%Y-%m-%d")
+    
+    country_num <- input$slider_country
+    print(country_num)
+    
+    slt_country <-as.data.frame(totalofdeaths) %>% 
+      top_n(n=country_num, w=numofdeaths) 
+      
+    slt_country <- as_tibble(slt_country)
+ 
+    
+    plotworlddeaths <- formatted_df%>%
+      filter(country %in% c(slt_country$country))
+
+
+    
+    pt9 <- ggplot(plotworlddeaths, aes(date, numofdeaths, col=country,group=1, text= paste0( "date:", ymd(date),
                                                                                                     "<br>","country:", country,                                    
                                                                                                     "<br>","deaths:", numofdeaths )))+  
       geom_line(size=0.6, alpha=0.6) +
       geom_point()+
-      scale_x_date(breaks = "7 days",limits=c(dminn,dmaxx), labels = date_format("%b-%d")) +
+      scale_x_date(breaks = "4 days",limits=c(dminn,dmaxx), labels = date_format("%b-%d")) +
       scale_y_continuous(labels = comma)+ 
       labs(#title="Recoveries by Date",
         x= "",
@@ -543,6 +584,9 @@ server <- function(input, output) {
       )
       )
   })
+  
+  addClass(selector = "body", class = "sidebar-open")
+  removeClass(selector = "body", class = "sidebar-collapse")
   
 }
 

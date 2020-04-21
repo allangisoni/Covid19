@@ -26,13 +26,14 @@ dashboardPage(
 
     )
   ),
-  dashboardBody( style="background-color:#203644",
+  dashboardBody( style="background-color:#203644",  useShinyjs(),
     tabItems(
       tabItem("dashboard", 
               fluidRow(column(width=3,
                 valueBoxOutput("confirmed", width = NULL),
                 valueBoxOutput("deaths", width=NULL),
-                valueBoxOutput("recoveries" , width=NULL)
+                valueBoxOutput("recoveries" , width=NULL),
+                valueBoxOutput("active" , width=NULL)
                 ),   column(9,
                          gradientBox(
                            title = "Confirmed Cases",width =12, gradientColor = "teal", closable = FALSE,
@@ -64,15 +65,21 @@ dashboardPage(
                widgetUserBox(
                  width = 12,
                  title = "Allan Gisoni",
-                 subtitle = tagList("Software Developer",dtbr,dtbr,linkedInUrl,dtbr, "Email: Allangisoni@gmail.com") ,
+                 subtitle = tagList("Software Developer" ) ,
                  type = NULL,
                  src ="https://image.flaticon.com/icons/svg/2230/2230951.svg",
                  background = TRUE,
                  backgroundUrl = "https://www.pexels.com/photo/apple-devices-books-business-coffee-572056/",
                  closable = FALSE,
-                 "General",
+                 "General Info",
                  footer = tagList( "This site is updated daily. All data resources used have been taken from "
-                                  ,dataUrl,dtbr,dtbr,dataCode,gitHubUrl,".")
+                                  ,dataUrl,dtbr,dtbr,dataCode,gitHubUrl,".", dtbr, dtbr, "Get in touch:",  socialButton(
+                                    url = "https://www.linkedin.com/in/allan-gisoni/",
+                                    type = "linkedin"
+                                  )," ",socialButton(
+                                    url ="https://github.com/dihesus",
+                                    type= "github"
+                                  ),dtbr, "Email: Allangisoni@gmail.com" )
                )
                )
                
@@ -119,17 +126,52 @@ dashboardPage(
                          boxToolSize="sm", footer = withSpinner(plotOutput("plot7", height = 450)),
                          "Confirmed cases by country"))),
               fluidRow(
-                column(12,
-                       gradientBox(
-                         title = "Recoveries",width =12, gradientColor = "teal", closable = FALSE,
-                         boxToolSize="sm", footer = withSpinner(plotlyOutput("plot8", height = 450)),
-                         "Recoveries stats by country"))),
+                boxPlus(
+                  width = 12,
+                  title = "Recovery stats by country", 
+                  closable = FALSE, 
+                  status = "info", 
+                  solidHeader = FALSE, 
+                  collapsible = TRUE,
+                  enable_sidebar = TRUE,
+                  sidebar_width = 15,
+                  sidebar_start_open = TRUE,
+                  sidebar_content = tagList(
+                    sliderInput(
+                      "slider_rcountry", 
+                      "Number of countries to display:",
+                      min = 0, 
+                      max = 200, 
+                      value = 5
+                    )
+                  ),
+                  plotlyOutput("plot8", height = 450)
+                )
+                ),
               fluidRow(
-                column(12,
-                       gradientBox(
-                         title = "Deaths",width =12, gradientColor = "teal", closable = FALSE,
-                         boxToolSize="sm", footer = withSpinner(plotlyOutput("plot9", height = 450)),
-                         "Death stats by country")))
+                boxPlus(
+                  width = 12,
+                  title = "Death stats by country", 
+                  closable = FALSE, 
+                  status = "info", 
+                  solidHeader = FALSE, 
+                  collapsible = TRUE,
+                  enable_sidebar = TRUE,
+                  sidebar_width = 15,
+                  sidebar_start_open = TRUE,
+                  sidebar_content = tagList(
+                    sliderInput(
+                      "slider_country", 
+                      "Number of countries to display:",
+                      min = 0, 
+                      max = 200, 
+                      value = 5
+                    )
+                  ),
+                  plotlyOutput("plot9", height = 450)
+                )
+                
+                )
       )
   
     )

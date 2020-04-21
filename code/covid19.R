@@ -16,19 +16,19 @@ packageVersion("plotly")
 
 options(scipen = 999)
 
-#setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
-setwd("C:\\Users\\85036758\\Documents\\Covid19\\")
+setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
+#setwd("C:\\Users\\85036758\\Documents\\Covid19\\")
 getwd()
 
 df <- read.csv("data\\deaths.csv", header = TRUE, stringsAsFactors = FALSE)
-confirmed_cases <- read.csv("data\\covid19_confirmed.csv", header = TRUE, stringsAsFactors = FALSE)
-recovery_cases <- read.csv("data\\covid19_recovered.csv", header = TRUE, stringsAsFactors = FALSE)
+confirmed_cases <- read.csv("data\\confirmed.csv", header = TRUE, stringsAsFactors = FALSE)
+recovery_cases <- read.csv("data\\recovered.csv", header = TRUE, stringsAsFactors = FALSE)
 print(df)
 print(confirmed_cases)
 
 
 formatted_df <- df %>%
-      gather(date, numofdeaths, 'X43852':'X43935', convert = TRUE) %>%
+      gather(date, numofdeaths, 'X43852':'X43941', convert = TRUE) %>%
       mutate(date = sub("X", " ", date))  %>%
       rename(country = Country.Region)  %>%
       mutate(date = as.numeric(date)) %>%
@@ -41,7 +41,7 @@ formatted_df
 summary(formatted_df)
 
 fom_confirmed_cases<- confirmed_cases %>%
-  gather(date, numofcases, 'X43852':'X43935', convert = TRUE) %>%
+  gather(date, numofcases, 'X43852':'X43941', convert = TRUE) %>%
   mutate(date = sub("X", " ", date))  %>%
   rename(country = Country.Region)  %>%
   mutate(date = as.numeric(date)) %>%
@@ -52,7 +52,7 @@ fom_confirmed_cases<- confirmed_cases %>%
 
 
 fom_recovery_cases<- recovery_cases %>%
-  gather(date, numofrecoveries, 'X43852':'X43935', convert = TRUE) %>%
+  gather(date, numofrecoveries, 'X43852':'X43941', convert = TRUE) %>%
   mutate(date = sub("X", " ", date))  %>%
   rename(country = Country.Region)  %>%
   mutate(date = as.numeric(date)) %>%
@@ -227,4 +227,21 @@ test<- fom_confirmed_cases %>%
   group_by(date) %>% 
   summarise(numofconfirmedcases= sum(numofcases)) %>% 
   mutate(new_cases = numofconfirmedcases -lag(numofconfirmedcases, default = first(numofconfirmedcases))) 
+
+
+
+slt_country <- as.data.frame(totalofdeaths) %>% 
+              top_n(10)
+              
+
+slt_country <- as_tibble(slt_country)
+#print(pltcountry)
+
+?arrange
+plotworlddeaths <- formatted_df %>%
+                   filter(country %in% c(slt_country$country))%>% 
+                   arrange(desc(date)) 
+     
+  #  filter(country == c(slt_country$country))
+
 

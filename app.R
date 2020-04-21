@@ -21,12 +21,12 @@ library(dplyr)
 library(reshape2)
 library(grid)
 library(gridExtra)
-library(rsconnect)
+#library(rsconnect)
 
 getwd()
 #setwd("C:\\Users\\85036758\\Documents\\Covid19\\code")
-#setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\code")
+setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\code")
 
-deployApp()
-#runApp()
+#deployApp()
+runApp()
 
