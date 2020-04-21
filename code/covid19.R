@@ -9,12 +9,15 @@ library(plotly)
 library(reshape2)
 library(grid)
 library(gridExtra)
+library(FSA)
+library(rsconnect)
 
 packageVersion("plotly")
 
 options(scipen = 999)
 
-setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
+#setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
+setwd("C:\\Users\\85036758\\Documents\\Covid19\\")
 getwd()
 
 df <- read.csv("data\\deaths.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -186,4 +189,42 @@ ggplot(covid_df, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
   scale_fill_brewer(palette="RdBu") +
   coord_polar(theta="y") +
   xlim(c(2, 4)) + theme_void()+ theme(legend.position = "none")
+
+formatted_df1 <- formatted_df %>% 
+               filter(country==c("Kenya", "US"))
+
+
+dminn <-as.Date("2020-01-23", format = "%Y-%m-%d")
+dmaxx <-as.Date("2020-04-20", format = "%Y-%m-%d")
+pt9 <- ggplot(formatted_df1, aes(date, numofdeaths, text= paste0( "date:", ymd(date),
+                                                                                      "<br>","country:", country,                                    
+                                                                                      "<br>","deaths:", numofdeaths )))+  
+  geom_line(size=0.6, alpha=0.6, aes(group=country)) +
+  geom_dl(aes(label=country), method = "last.points")+
+ # geom_point()+
+  scale_x_date(breaks = "7 days",limits=c(dminn,dmaxx), labels = date_format("%b-%d")) +
+  labs(#title="Recoveries by Date",
+    x= "",
+    y= "Deaths",
+    #subtitle="", 
+    caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
+  
+  theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
+        panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major.x= element_blank())
+#pt8
+pt9
+
+
+formatted_df2 <- formatted_df %>% 
+  filter(country == "Kenya") %>% 
+  arrange(date) %>% 
+  mutate(new_deaths = numofdeaths -lag(numofdeaths, default = first(numofdeaths))) 
+
+test<- fom_confirmed_cases %>% 
+  filter(date >= "2020-01-22") %>%
+  group_by(date) %>% 
+  summarise(numofconfirmedcases= sum(numofcases)) %>% 
+  mutate(new_cases = numofconfirmedcases -lag(numofconfirmedcases, default = first(numofconfirmedcases))) 
 

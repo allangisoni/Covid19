@@ -18,7 +18,7 @@ library(directlabels)
 
 options(scipen = 999)
 
-setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
+#setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
 getwd()
 #setwd("C:\\Users\\85036758\\Documents\\Covid19\\")
 df <- read.csv("data\\deaths.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -140,7 +140,7 @@ server <- function(input, output) {
   
   output$confirmed <- renderValueBox({
     valueBox(
-      value = totalconfirmedcases,
+      value = prettyNum(totalconfirmedcases,big.mark=",",scientific=FALSE),
       subtitle = "Total confirmed cases",
       icon = icon("fas fa-lightbulb","fa-xs", lib="font-awesome"),
       color = "yellow"
@@ -150,7 +150,7 @@ server <- function(input, output) {
   
   output$deaths <- renderValueBox({
     valueBox(
-      value = totaldeaths,
+      value =  prettyNum(totaldeaths,big.mark=",",scientific=FALSE),
       subtitle = "Total deaths ",
       icon = icon("fas fa-exclamation-triangle", "fa-xs", lib="font-awesome"),
       color = "red"
@@ -159,7 +159,7 @@ server <- function(input, output) {
   
   output$recoveries <- renderValueBox({
     valueBox(
-      value = totalrecoveries,
+      value =  prettyNum(totalrecoveries,big.mark=",",scientific=FALSE),
       subtitle = "Total Recoveries ",
       icon = icon("fas fa-heartbeat","fa-xs",lib="font-awesome"),
       color = "green"
@@ -186,21 +186,24 @@ server <- function(input, output) {
         pltconfirmdata <- fom_confirmed_cases %>% 
           filter(date >= "2020-01-22") %>%
           group_by(date) %>% 
-          summarise(numofconfirmedcases= sum(numofcases))
+          summarise(numofconfirmedcases= sum(numofcases))%>% 
+          mutate(new_cases = numofconfirmedcases -lag(numofconfirmedcases, default = first(numofconfirmedcases))) 
         
     
-      pt2 <- ggplot(pltconfirmdata, aes(x=ymd(date), numofconfirmedcases, col= "#e6f2ff", group=1, text = paste0("confirmed cases:", numofconfirmedcases,
-       
-                                                                                              "<br>","date:", ymd(date))))+  
+      pt2 <- ggplot(pltconfirmdata, aes(x=ymd(date), numofconfirmedcases, col= "#e6f2ff", group=1, text = paste0( "date:", ymd(date),
+                                                                                                                  "<br>","new_cases:", new_cases,
+                                                                                                                 "<br>", "total cases:", numofconfirmedcases
+                                                                                                        )))+  
       geom_area(fill="#e6f2ff", col= "#e6f2ff") + 
       geom_line(col= "#80bfff")+
       geom_point(col= "#001a33") +
       scale_x_date(labels = date_format("%b-%d"), breaks = "7 days")+
+      scale_y_continuous(labels = comma)+  
       #scale_x_date(breaks = "2 days") +
       labs(#title="Confirmed Cases by Date",
            x= "",
            y= "Cases",
-           #subtitle="Top 5 Countries", 
+           #subtitle=" Countries", 
            caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
       
       theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
@@ -240,6 +243,7 @@ server <- function(input, output) {
       geom_line(size=0.6, alpha=0.6) +
       geom_point()+
       scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
+      scale_y_continuous(labels = comma)+ 
       labs(#title="Deaths by Date",
            x= "",
            y= "Deaths",
@@ -278,6 +282,7 @@ server <- function(input, output) {
       geom_line(size=0.6, alpha=0.6) +
       geom_point()+
       scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
+      scale_y_continuous(labels = comma)+ 
       labs(#title="Recoveries by Date",
            x= "",
            y= "Recoveries",
@@ -313,17 +318,20 @@ server <- function(input, output) {
     
     
     plotdata2 <- fom_confirmed_cases%>%
-      filter(country == c("Kenya"))
+                 filter(date >="2020-03-12" & country == c("Kenya")) %>% 
+                 arrange(date) %>% 
+                 mutate(new_cases = numofcases -lag(numofcases, default = first(numofcases)))
     
     
     pt2 <- ggplot(plotdata2, aes(date, numofcases, group=1, text= paste0( "date:", ymd(date),
-                                                                                            "<br>","confirmed cases:", numofcases )))+  
+                                                                          "<br>","new_cases:", new_cases,
+                                                                          "<br>","total cases:", numofcases)))+  
       geom_line(size=0.6, alpha=0.6, col= "#66b3ff") +
       geom_point(col= "#66b3ff")+
       scale_x_date(breaks = "7 days", labels = date_format("%b-%d")) +
       labs(#title="Recoveries by Date",
         x= "",
-        y= "Recoveries",
+        y= "Case count",
         #subtitle="", 
         caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
       
@@ -380,7 +388,7 @@ server <- function(input, output) {
     filter(Country=="Kenya")
   output$kenya_confirmed <- renderValueBox({
     valueBox(
-      value = covid_df$Confirmed_Cases,
+      value =  prettyNum(covid_df$Confirmed_Cases,big.mark=",",scientific=FALSE),
       subtitle = "Confirmed cases ",
       icon = icon("fas fa-lightbulb","fa-xs",lib="font-awesome"),
       color = "yellow"
@@ -388,7 +396,7 @@ server <- function(input, output) {
   })
   output$kenya_deaths <- renderValueBox({
     valueBox(
-      value = covid_df$Deaths,
+      value =  prettyNum(covid_df$Deaths,big.mark=",",scientific=FALSE),
       subtitle = "Deaths ",
       icon = icon("fas fa-exclamation-triangle", "fa-xs", lib="font-awesome"),
       color = "red"
@@ -396,7 +404,7 @@ server <- function(input, output) {
   })
   output$kenya_recoveries <- renderValueBox({
     valueBox(
-      value = covid_df$Recoveries,
+      value =  prettyNum(covid_df$Recoveries,big.mark=",",scientific=FALSE),
       subtitle = "Recoveries ",
       icon = icon("fas fa-heartbeat","fa-xs",lib="font-awesome"),
       color = "green"
@@ -404,7 +412,7 @@ server <- function(input, output) {
   })
   output$kenya_active <- renderValueBox({
     valueBox(
-      value = covid_df$Active,
+      value = prettyNum(covid_df$Active ,big.mark=",",scientific=FALSE),
       subtitle = "Active cases ",
       icon = icon("fas fa-spa","fa-xs",lib="font-awesome"),
       color = "navy"
@@ -413,15 +421,18 @@ server <- function(input, output) {
   
   output$plot6 <- renderPlotly({
     kenyaplotdata <- formatted_df%>%
-      filter( country == "Kenya")
+                     filter(date >="2020-03-12" & country == "Kenya") %>% 
+                     arrange(date) %>% 
+                     mutate(new_deaths = numofdeaths -lag(numofdeaths, default = first(numofdeaths)))
     
     kenyapt <- ggplot(kenyaplotdata, aes(date, numofdeaths, group=1,
                                  text= paste0("date:", ymd(date),
-                                              "<br>","deaths:", numofdeaths)))+  
+                                              "<br>","new_deaths:", new_deaths,
+                                              "<br>","total deaths:", numofdeaths)))+  
       geom_area(fill="#e6f2ff", col= "#e6f2ff") + 
       geom_line(size=0.6, alpha=0.6,col= "#66b3ff") +
       geom_point(col= "#66b3ff")+
-      scale_x_date(breaks = "7 days", labels = date_format("%b-%d")) +
+      scale_x_date(breaks = "2 days", labels = date_format("%b-%d")) +
       labs(#title="Deaths by Date",
         x= "",
         y= "Deaths",
@@ -473,6 +484,7 @@ server <- function(input, output) {
       geom_line(size=0.6, alpha=0.6) +
       geom_point()+
       scale_x_date(breaks = "7 days",limits=c(dminn,dmaxx), labels = date_format("%b-%d")) +
+      scale_y_continuous(labels = comma)+ 
       labs(#title="Recoveries by Date",
         x= "",
         y= "Recoveries",
@@ -488,7 +500,7 @@ server <- function(input, output) {
     
     
    
-    ggplotly(ptdl8, tooltip="text")%>%
+    ggplotly(pt8, tooltip="text")%>%
       layout(legend = list(
         orientation = "h",
         x=0.5,
@@ -499,7 +511,37 @@ server <- function(input, output) {
   })
   
   output$plot9 <- renderPlotly({
+    dminn <-as.Date("2020-01-23", format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-04-20", format = "%Y-%m-%d")
+    pt9 <- ggplot(formatted_df, aes(date, numofdeaths, col=country,group=1, text= paste0( "date:", ymd(date),
+                                                                                                    "<br>","country:", country,                                    
+                                                                                                    "<br>","deaths:", numofdeaths )))+  
+      geom_line(size=0.6, alpha=0.6) +
+      geom_point()+
+      scale_x_date(breaks = "7 days",limits=c(dminn,dmaxx), labels = date_format("%b-%d")) +
+      scale_y_continuous(labels = comma)+ 
+      labs(#title="Recoveries by Date",
+        x= "",
+        y= "Deaths",
+        #subtitle="", 
+        caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
+      
+      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
+            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
+                                            size = 2, linetype = "solid"),
+            panel.grid.major.x= element_blank())
+    #pt8
+    #ptdl8 <-direct.label(pt9,method="last.points" )
     
+    
+    
+    ggplotly(pt9, tooltip="text")%>%
+      layout(legend = list(
+        orientation = "h",
+        x=0.5,
+        y=-0.5
+      )
+      )
   })
   
 }
