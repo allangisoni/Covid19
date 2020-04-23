@@ -5,11 +5,6 @@ library(plotly)
 library(tidyr)
 library(dplyr)
 library(DT)
-
-
-#library(ggplot2)
-#library(tidyverse)
-
 library(reshape2)
 library(grid)
 library(gridExtra)
@@ -19,20 +14,29 @@ library(rsconnect)
 
 options(scipen = 999)
 
-#setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid19\\")
+#setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid-19 S\\")
 #getwd()
 #setwd("C:\\Users\\85036758\\Documents\\Covid19\\")
 df <- read.csv("data/deaths.csv", header = TRUE, stringsAsFactors = FALSE)
+#df <- read.csv("data\\deaths.csv", header = TRUE, stringsAsFactors = FALSE)
 confirmed_cases <- read.csv("data/confirmed.csv", header = TRUE, stringsAsFactors = FALSE)
+#confirmed_cases <- read.csv("data\\confirmed.csv", header = TRUE, stringsAsFactors = FALSE)
 recovery_cases <- read.csv("data/recovered.csv", header = TRUE, stringsAsFactors = FALSE)
+#recovery_cases <- read.csv("data\\recovered.csv", header = TRUE, stringsAsFactors = FALSE)
 print(df)
 print(confirmed_cases)
 
 server <- function(input, output) { 
   
   
+  observeEvent(input$sidebar,{
+    addClass(selector = "body", class = "sidebar-collapse")
+    removeClass(selector = "body", class = "sidebar-open")
+    })
+ 
+  
   formatted_df <- df %>%
-    gather(date, numofdeaths, 'X43852':'X43941', convert = TRUE) %>%
+    gather(date, numofdeaths, 'X43852':'X43942', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -45,7 +49,7 @@ server <- function(input, output) {
   summary(formatted_df)
   
   fom_confirmed_cases<- confirmed_cases %>%
-    gather(date, numofcases, 'X43852':'X43941', convert = TRUE) %>%
+    gather(date, numofcases, 'X43852':'X43942', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -56,7 +60,7 @@ server <- function(input, output) {
   
   
   fom_recovery_cases<- recovery_cases %>%
-    gather(date, numofrecoveries, 'X43852':'X43941', convert = TRUE) %>%
+    gather(date, numofrecoveries, 'X43852':'X43942', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -69,31 +73,14 @@ server <- function(input, output) {
   
   
   plotdata <- formatted_df%>%
-    filter(numofdeaths >2000  & date == "2020-04-20") %>%
+    filter(numofdeaths >2000  & date == "2020-04-21") %>%
     as_tibble()
   
-  
-  summary(plotdata)
-  
-  # plotdata$country <- as.character(plotdata$country)
-  
-  pt <- ggplot(data=plotdata, aes(x=country, y=numofdeaths, fill=country))+
-    geom_bar(stat = "identity", width = 0.3) +
-    # geom_text(aes(x = country, y = numofdeaths, label = numofdeaths)) +
-    guides(fill=FALSE)+
-    labs(title="Deaths per Country", 
-         x= "Country",
-         y= "Num of Deaths",
-         #subtitle="", 
-         caption="source:  Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
-    theme(axis.text.x = element_text(angle=65, vjust = 0.4), legend.position="none") 
-  pt
-  ggplotly(pt, tooltip = "text")
   
  
   
   totalofdeaths  <- formatted_df %>%
-    filter(date == "2020-04-20") %>%
+    filter(date == "2020-04-21") %>%
     as_tibble()
   
   totaldeaths = sum(totalofdeaths$numofdeaths)
@@ -107,7 +94,7 @@ server <- function(input, output) {
   # CONFIRMED CASES
   
   confirmedplotdata <- fom_confirmed_cases %>% 
-    filter(date == "2020-04-20") %>%
+    filter(date == "2020-04-21") %>%
     as_tibble()
   
   confirmedplotdata  
@@ -118,7 +105,7 @@ server <- function(input, output) {
   # RECOVERY CASES
   
   recoveryplotdata <- fom_recovery_cases %>%
-    filter(date == "2020-04-20") %>%
+    filter(date == "2020-04-21") %>%
     as_tibble()
   recoveryplotdata
   
@@ -127,7 +114,7 @@ server <- function(input, output) {
   
   
   uniquecountries <-formatted_df%>%
-    filter( date == "2020-04-20") %>%
+    filter( date == "2020-04-21") %>%
     select(country, numofdeaths)
   
   covid_df <- cbind.data.frame(country=uniquecountries$country,  confirmed_cases=confirmedplotdata$numofcases,
@@ -186,7 +173,7 @@ server <- function(input, output) {
         
         plt1data <-  fom_confirmed_cases %>% 
                     #filter(date >= "2020-03-14" & country == c(filcountries$country)) %>%
-                    filter(date >= "2020-03-20" & country == c("US")) %>%
+                    filter(date >= "2020-03-21" & country == c("US")) %>%
                     arrange(desc(numofcases)) 
        
         print(plt1data)
@@ -220,7 +207,7 @@ server <- function(input, output) {
             panel.grid.major.x= element_blank()
             ) 
     
-     ggplotly(pt2, tooltip = "text")
+     ggplotly(pt2, tooltip = "text") %>% config(displayModeBar=FALSE)
     
     
   })
@@ -235,7 +222,7 @@ server <- function(input, output) {
     print(pltcountry)
     
     plotdata1 <- formatted_df%>%
-               filter(date >= "2020-03-20" & country %in% c(pltcountry$country))
+               filter(date >= "2020-03-21" & country %in% c(pltcountry$country))
   
     print(plotdata1)
     
@@ -269,7 +256,7 @@ server <- function(input, output) {
         x=0.5,
         y=-0.5
       )
-      )
+      )%>% config(displayModeBar=FALSE)
     
     })
   
@@ -282,7 +269,7 @@ server <- function(input, output) {
     print(rpltcountry)
     
     plotdata2 <- fom_recovery_cases%>%
-      filter(date >= "2020-03-20" & country %in% c(rpltcountry$country))
+      filter(date >= "2020-03-21" & country %in% c(rpltcountry$country))
     
     
     pt2 <- ggplot(plotdata2, aes(date, numofrecoveries, col= country,group=1, text= paste0("country:", country, "<br>","recoveries:", numofrecoveries,
@@ -308,7 +295,7 @@ server <- function(input, output) {
         x=0.5,
         y=-0.5
       )
-      )
+      )%>% config(displayModeBar=FALSE)
     
   })
   
@@ -354,7 +341,7 @@ server <- function(input, output) {
         x=0.5,
         y=-0.5
       )
-      )
+      )%>% config(displayModeBar=FALSE)
     
   })
   
@@ -440,7 +427,7 @@ server <- function(input, output) {
       geom_area(fill="#e6f2ff", col= "#e6f2ff") + 
       geom_line(size=0.6, alpha=0.6,col= "#66b3ff") +
       geom_point(col= "#66b3ff")+
-      scale_x_date(breaks = "2 days", labels = date_format("%b-%d")) +
+      scale_x_date(breaks = "7 days", labels = date_format("%b-%d")) +
       labs(#title="Deaths by Date",
         x= "",
         y= "Deaths",
@@ -458,13 +445,13 @@ server <- function(input, output) {
         x=0.5,
         y=-0.5
       )
-      )
+      )%>% config(displayModeBar=FALSE)
   })
   
   output$plot7 <- renderPlot({
     
     pltworlddata <- fom_confirmed_cases %>% 
-      filter(date >= "2020-04-20") 
+      filter(date >= "2020-04-21") 
     
   
      ggplot(pltworlddata, aes(area = numofcases, fill=country, label = country)) +
@@ -489,7 +476,7 @@ server <- function(input, output) {
     country_rnum <- input$slider_rcountry
     print(country_rnum)
     
-    slt_rcountry <-as.data.frame(recoveryplotdata) %>% 
+     slt_rcountry <-as.data.frame(recoveryplotdata) %>% 
       top_n(n=country_rnum, w=numofrecoveries) 
     
     slt_rcountry <- as_tibble(slt_rcountry)
@@ -500,7 +487,7 @@ server <- function(input, output) {
     
     
                 
-    dminn <-as.Date("2020-01-23", format = "%Y-%m-%d")
+    dminn <-as.Date("2020-01-22", format = "%Y-%m-%d")
     dmaxx <-as.Date("2020-04-25", format = "%Y-%m-%d")
     pt8 <- ggplot(plotworldrecoveries, aes(date, numofrecoveries, col=country,group=1, text= paste0( "date:", ymd(date),
                                                                           "<br>","country:", country,                                    
@@ -530,14 +517,14 @@ server <- function(input, output) {
         x=0.5,
         y=-0.5
       )
-      )
+      )%>% config(displayModeBar=FALSE)
     
   })
   
 
   
   output$plot9 <- renderPlotly({
-    dminn <-as.Date("2020-01-23", format = "%Y-%m-%d")
+    dminn <-as.Date("2020-01-22", format = "%Y-%m-%d")
     dmaxx <-as.Date("2020-04-25", format = "%Y-%m-%d")
     
     country_num <- input$slider_country
@@ -582,11 +569,10 @@ server <- function(input, output) {
         x=0.5,
         y=-0.5
       )
-      )
+      )%>% config(displayModeBar=FALSE)
   })
   
-  addClass(selector = "body", class = "sidebar-open")
-  removeClass(selector = "body", class = "sidebar-collapse")
+
   
 }
 

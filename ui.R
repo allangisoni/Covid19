@@ -1,8 +1,20 @@
 library(shiny)
+library(shinyjs)
 library(shinydashboard)
 library(shinydashboardPlus)
-library(shinyjs)
 library(shinybusy)
+library(shinyWidgets)
+library(xlsx)
+library(shinycssloaders)
+library(sodium)
+library(scales)
+library(lubridate)
+library(plotly)
+library(tidyr)
+library(dplyr)
+library(reshape2)
+library(grid)
+library(gridExtra)
 
 
 dataUrl <- a(href="https://data.humdata.org/dataset/novel-coronavirus-2019-ncov-cases",  
@@ -13,10 +25,12 @@ dtbr <- tags$br()
 linkedInIcon <- icon("fab fa-linkedin", lib="font-awesome")
 linkedInUrl <- a(href="https://www.linkedin.com/in/allan-gisoni/", "LinkedIn")
 profileimage <- img("hesus.jpg")
-dashboardPage(
-  dashboardHeader(title = "COVID 19 DASHBOARD"),
+
+dashboardPagePlus(
+  dashboardHeaderPlus(title =tagList(span(class="logo-lg","COVID 19"),img(src="")) , enable_rightsidebar = FALSE), 
+  enable_preloader = TRUE, loading_duration = 3, title = "COVID 19 DASHBOARD",
   dashboardSidebar(
-    sidebarMenu(
+    sidebarMenu(id="sidebar",
       menuItem("Dashboard", tabName = "dashboard", icon = icon("fas fa-tachometer-alt", lib = "font-awesome")),
       menuItem("Charts", tabName = "chart", icon = icon("fas fa-chart-pie", lib = "font-awesome"),
                menuSubItem("Kenya", tabName = "kenya"),
@@ -25,8 +39,9 @@ dashboardPage(
       menuItem("About", tabName = "about",icon = icon("fas fa-info-circle", lib = "font-awesome"))
 
     )
+  
   ),
-  dashboardBody( style="background-color:#203644",  useShinyjs(),
+  dashboardBody(useShinyjs(),style="background-color:#203644", 
     tabItems(
       tabItem("dashboard", 
               fluidRow(column(width=3,
@@ -68,6 +83,7 @@ dashboardPage(
                  subtitle = tagList("Software Developer" ) ,
                  type = NULL,
                  src ="https://image.flaticon.com/icons/svg/2230/2230951.svg",
+                 #src="hesus.jpg",
                  background = TRUE,
                  backgroundUrl = "https://www.pexels.com/photo/apple-devices-books-business-coffee-572056/",
                  closable = FALSE,
@@ -134,13 +150,13 @@ dashboardPage(
                   solidHeader = FALSE, 
                   collapsible = TRUE,
                   enable_sidebar = TRUE,
-                  sidebar_width = 15,
+                  sidebar_width = 25,
                   sidebar_start_open = TRUE,
                   sidebar_content = tagList(
                     sliderInput(
                       "slider_rcountry", 
                       "Number of countries to display:",
-                      min = 0, 
+                      min = 2, 
                       max = 200, 
                       value = 5
                     )
@@ -157,13 +173,13 @@ dashboardPage(
                   solidHeader = FALSE, 
                   collapsible = TRUE,
                   enable_sidebar = TRUE,
-                  sidebar_width = 15,
+                  sidebar_width = 25,
                   sidebar_start_open = TRUE,
                   sidebar_content = tagList(
                     sliderInput(
                       "slider_country", 
                       "Number of countries to display:",
-                      min = 0, 
+                      min = 2, 
                       max = 200, 
                       value = 5
                     )
@@ -175,7 +191,7 @@ dashboardPage(
       )
   
     )
-    )
+    ), dashboardFooter(right_text = "Last updated on 22/04/2020 07.47AM")
   )
 
 
