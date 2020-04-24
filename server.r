@@ -34,9 +34,12 @@ server <- function(input, output) {
     removeClass(selector = "body", class = "sidebar-open")
     })
  
+  max_date <- "2020-04-23"
+  min_date <- "2020-01-22"
+  
   
   formatted_df <- df %>%
-    gather(date, numofdeaths, 'X43852':'X43942', convert = TRUE) %>%
+    gather(date, numofdeaths, 'X43852':'X43944', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -49,7 +52,7 @@ server <- function(input, output) {
   summary(formatted_df)
   
   fom_confirmed_cases<- confirmed_cases %>%
-    gather(date, numofcases, 'X43852':'X43942', convert = TRUE) %>%
+    gather(date, numofcases, 'X43852':'X43944', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -60,7 +63,7 @@ server <- function(input, output) {
   
   
   fom_recovery_cases<- recovery_cases %>%
-    gather(date, numofrecoveries, 'X43852':'X43942', convert = TRUE) %>%
+    gather(date, numofrecoveries, 'X43852':'X43944', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -73,14 +76,14 @@ server <- function(input, output) {
   
   
   plotdata <- formatted_df%>%
-    filter(numofdeaths >2000  & date == "2020-04-21") %>%
+    filter(numofdeaths >2000  & date == max_date) %>%
     as_tibble()
   
   
  
   
   totalofdeaths  <- formatted_df %>%
-    filter(date == "2020-04-21") %>%
+    filter(date == max_date) %>%
     as_tibble()
   
   totaldeaths = sum(totalofdeaths$numofdeaths)
@@ -94,7 +97,7 @@ server <- function(input, output) {
   # CONFIRMED CASES
   
   confirmedplotdata <- fom_confirmed_cases %>% 
-    filter(date == "2020-04-21") %>%
+    filter(date == max_date) %>%
     as_tibble()
   
   confirmedplotdata  
@@ -105,7 +108,7 @@ server <- function(input, output) {
   # RECOVERY CASES
   
   recoveryplotdata <- fom_recovery_cases %>%
-    filter(date == "2020-04-21") %>%
+    filter(date == max_date) %>%
     as_tibble()
   recoveryplotdata
   
@@ -114,7 +117,7 @@ server <- function(input, output) {
   
   
   uniquecountries <-formatted_df%>%
-    filter( date == "2020-04-21") %>%
+    filter( date == max_date) %>%
     select(country, numofdeaths)
   
   covid_df <- cbind.data.frame(country=uniquecountries$country,  confirmed_cases=confirmedplotdata$numofcases,
@@ -179,7 +182,7 @@ server <- function(input, output) {
         print(plt1data)
     
         pltconfirmdata <- fom_confirmed_cases %>% 
-          filter(date >= "2020-01-22") %>%
+          filter(date >= min_date) %>%
           group_by(date) %>% 
           summarise(numofconfirmedcases= sum(numofcases))%>% 
           mutate(new_cases = numofconfirmedcases -lag(numofconfirmedcases, default = first(numofconfirmedcases))) 
@@ -301,14 +304,14 @@ server <- function(input, output) {
   
   coviddt <- datatable(
     covid_df,
-    options = list(pageLength =10, dom = 'ft',  autoWidth = FALSE,
-                   columnDefs = list(list(width = '160px', 
+    options = list(pageLength =10, dom = 'Bftsp',  autoWidth = TRUE,
+                   columnDefs = list(list(width = '270px', 
                                           targets = c(1,2,3,4,5))))
     
   )
   output$covidtbl <- DT::renderDataTable(coviddt,
                                          filter = c("none"),
-                                           options = list(pageLength = 5, dom = 't',  autoWidth = FALSE), rownames = FALSE)
+                                           options = list(pageLength = 10, dom = 'ft',  autoWidth = TRUE), rownames = FALSE)
   output$plot4 <- renderPlotly({
     
     
@@ -451,7 +454,7 @@ server <- function(input, output) {
   output$plot7 <- renderPlot({
     
     pltworlddata <- fom_confirmed_cases %>% 
-      filter(date >= "2020-04-21") 
+      filter(date >= max_date) 
     
   
      ggplot(pltworlddata, aes(area = numofcases, fill=country, label = country)) +
@@ -487,8 +490,8 @@ server <- function(input, output) {
     
     
                 
-    dminn <-as.Date("2020-01-22", format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-04-25", format = "%Y-%m-%d")
+    dminn <-as.Date(min_date, format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-04-27", format = "%Y-%m-%d")
     pt8 <- ggplot(plotworldrecoveries, aes(date, numofrecoveries, col=country,group=1, text= paste0( "date:", ymd(date),
                                                                           "<br>","country:", country,                                    
                                                                           "<br>","recoveries:", numofrecoveries )))+  
@@ -524,8 +527,8 @@ server <- function(input, output) {
 
   
   output$plot9 <- renderPlotly({
-    dminn <-as.Date("2020-01-22", format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-04-25", format = "%Y-%m-%d")
+    dminn <-as.Date(min_date, format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-04-27", format = "%Y-%m-%d")
     
     country_num <- input$slider_country
     print(country_num)

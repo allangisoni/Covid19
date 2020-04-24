@@ -60,7 +60,7 @@ dashboardPagePlus(
                              gradientBox(title = "Confirmed Deaths", width =12, gradientColor = "teal", closable = FALSE, boxToolSize="sm", footer = withSpinner(plotlyOutput("plot2", height = 350)), "Top 5 countries" )),
                       column(width=6,
                              gradientBox(title = "Confirmed Recoveries", width =12, gradientColor = "teal", closable = FALSE, boxToolSize="sm", footer = withSpinner(plotlyOutput("plot3", height = 350)), "Top 5 countries" ))),
-             fluidRow( style="margin-top:16px",
+             fluidRow( style="margin-top:16px;margin-bottom:8px",
                column(12,
                       box(
                         title = 'COVID Summary', width = NULL,status = "info",
@@ -191,7 +191,7 @@ dashboardPagePlus(
       )
   
     )
-    ), dashboardFooter(right_text = "Last updated on 22/04/2020 07.47AM")
+    ), dashboardFooter(right_text = "Last updated on 23/04/2020 07.47AM")
   )
 
 
