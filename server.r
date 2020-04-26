@@ -34,12 +34,12 @@ server <- function(input, output) {
     removeClass(selector = "body", class = "sidebar-open")
     })
  
-  max_date <- "2020-04-23"
+  max_date <- "2020-04-25"
   min_date <- "2020-01-22"
   
   
   formatted_df <- df %>%
-    gather(date, numofdeaths, 'X43852':'X43944', convert = TRUE) %>%
+    gather(date, numofdeaths, 'X43852':'X43946', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -52,7 +52,7 @@ server <- function(input, output) {
   summary(formatted_df)
   
   fom_confirmed_cases<- confirmed_cases %>%
-    gather(date, numofcases, 'X43852':'X43944', convert = TRUE) %>%
+    gather(date, numofcases, 'X43852':'X43946', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -63,7 +63,7 @@ server <- function(input, output) {
   
   
   fom_recovery_cases<- recovery_cases %>%
-    gather(date, numofrecoveries, 'X43852':'X43944', convert = TRUE) %>%
+    gather(date, numofrecoveries, 'X43852':'X43946', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
