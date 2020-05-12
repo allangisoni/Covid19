@@ -34,12 +34,12 @@ server <- function(input, output) {
     removeClass(selector = "body", class = "sidebar-open")
     })
  
-  max_date <- "2020-05-07"
+  max_date <- "2020-05-11"
   min_date <- "2020-01-22"
   
   
   formatted_df <- df %>%
-    gather(date, numofdeaths, 'X43852':'X43958', convert = TRUE) %>%
+    gather(date, numofdeaths, 'X43852':'X43962', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -52,7 +52,7 @@ server <- function(input, output) {
   summary(formatted_df)
   
   fom_confirmed_cases<- confirmed_cases %>%
-    gather(date, numofcases, 'X43852':'X43958', convert = TRUE) %>%
+    gather(date, numofcases, 'X43852':'X43962', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -63,7 +63,7 @@ server <- function(input, output) {
   
   
   fom_recovery_cases<- recovery_cases %>%
-    gather(date, numofrecoveries, 'X43852':'X43958', convert = TRUE) %>%
+    gather(date, numofrecoveries, 'X43852':'X43962', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -491,7 +491,7 @@ server <- function(input, output) {
     
                 
     dminn <-as.Date(min_date, format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-05-08", format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-05-12", format = "%Y-%m-%d")
     pt8 <- ggplot(plotworldrecoveries, aes(date, numofrecoveries, col=country,group=1, text= paste0( "date:", ymd(date),
                                                                           "<br>","country:", country,                                    
                                                                           "<br>","recoveries:", numofrecoveries )))+  
@@ -528,7 +528,7 @@ server <- function(input, output) {
   
   output$plot9 <- renderPlotly({
     dminn <-as.Date(min_date, format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-05-08", format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-05-12", format = "%Y-%m-%d")
     
     country_num <- input$slider_country
     print(country_num)
