@@ -11,6 +11,9 @@ library(gridExtra)
 library(treemapify)
 library(directlabels)
 library(rsconnect)
+#library(tmap)
+#library(leaflet)
+#data("World")
 
 options(scipen = 999)
 
@@ -34,12 +37,12 @@ server <- function(input, output) {
     removeClass(selector = "body", class = "sidebar-open")
     })
  
-  max_date <- "2020-05-11"
+  max_date <- "2020-05-20"
   min_date <- "2020-01-22"
   
   
   formatted_df <- df %>%
-    gather(date, numofdeaths, 'X43852':'X43962', convert = TRUE) %>%
+    gather(date, numofdeaths, 'X43852':'X43971', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -52,7 +55,7 @@ server <- function(input, output) {
   summary(formatted_df)
   
   fom_confirmed_cases<- confirmed_cases %>%
-    gather(date, numofcases, 'X43852':'X43962', convert = TRUE) %>%
+    gather(date, numofcases, 'X43852':'X43971', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -63,7 +66,7 @@ server <- function(input, output) {
   
   
   fom_recovery_cases<- recovery_cases %>%
-    gather(date, numofrecoveries, 'X43852':'X43962', convert = TRUE) %>%
+    gather(date, numofrecoveries, 'X43852':'X43971', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -491,7 +494,7 @@ server <- function(input, output) {
     
                 
     dminn <-as.Date(min_date, format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-05-12", format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-05-25", format = "%Y-%m-%d")
     pt8 <- ggplot(plotworldrecoveries, aes(date, numofrecoveries, col=country,group=1, text= paste0( "date:", ymd(date),
                                                                           "<br>","country:", country,                                    
                                                                           "<br>","recoveries:", numofrecoveries )))+  
@@ -528,7 +531,7 @@ server <- function(input, output) {
   
   output$plot9 <- renderPlotly({
     dminn <-as.Date(min_date, format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-05-12", format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-05-25", format = "%Y-%m-%d")
     
     country_num <- input$slider_country
     print(country_num)
@@ -575,6 +578,76 @@ server <- function(input, output) {
       )%>% config(displayModeBar=FALSE)
   })
   
+  
+  
+
+  
+  world_tb <- formatted_df %>% 
+    filter(date == max_date) %>% 
+    mutate(iso_a3 =countrycode(country,"country.name", "genc3c" ))
+  
+  world_tb <- tibble(iso_a3=world_df$iso_a3, numofdeaths=world_df$numofdeaths)
+  world_tb
+  
+  nullcountries <- sum(is.na(world_df$iso_a3))
+  nullcountries
+  
+  
+
+  
+  world_confirmed_tb <- fom_confirmed_cases %>%
+    filter(date == max_date) %>% 
+    mutate(iso_a3 =countrycode(country,"country.name", "genc3c" ))
+  
+  world_confimed_tb <- tibble(iso_a3=world_confirmed$iso_a3, numofcases=world_confirmed$numofcases)
+  world_confimed_tb
+  
+  cnullcountries <- sum(is.na(world_confirmed$iso_a3))
+  cnullcountries
+  
+  
+  
+  world_recovered_tb <- fom_recovery_cases %>% 
+    filter(date == max_date) %>% 
+    mutate(iso_a3 =countrycode(country,"country.name", "genc3c" ))
+  world_recovered_tb <-  tibble(iso_a3=world_recovered_tb$iso_a3, numofrecoveries=world_recovered_tb$numofrecoveries)
+  world_recovered_tb
+  
+  alt_worlddata <- World           
+  alt_worlddata <- merge(alt_worlddata, world_tb, by="iso_a3")
+  alt_worlddata <- merge(alt_worlddata, world_confimed_tb, by="iso_a3")
+  alt_worlddata <- merge(alt_worlddata, world_recovered_tb, by="iso_a3")
+  
+
+  alt_worlddata <- alt_worlddata %>% 
+    select(iso_a3,name,area,continent,numofcases, numofdeaths,numofrecoveries)
+  
+  
+  output$world_tmap <- renderLeaflet({
+    
+
+  
+  tmap_mode("view")
+  tmap_style("white")
+  tmap_options(bg.color= "#203644")
+  
+  map1 <- tm_shape(alt_worlddata) +
+    tm_polygons(col = "gray41", id="name") +
+    tm_shape(alt_worlddata) +
+    tm_bubbles("numofcases", col="firebrick3", id="name", size =0.3, scale =1.5, popup.vars=c( "Confirmed"="numofcases",
+                                                                                               "Deaths" ="numofdeaths",
+                                                                                               "Recoveries"= "numofrecoveries"))+
+    tm_borders("white", lwd = .5)+
+    tm_scale_bar()+
+    #tm_text("new_continent", size = "area")+
+    tm_format("World")+
+    tm_layout(bg.color = "#203644",outer.bg.color ="#203644" , inner.margins = c(0, .20, .0, .60)) 
+  
+  map1
+  tmap_leaflet(map1) %>%
+  addProviderTiles(providers$Esri.WorldTopoMap)
+  
+  })
 
   
 }

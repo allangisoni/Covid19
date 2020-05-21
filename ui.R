@@ -15,6 +15,8 @@ library(dplyr)
 library(reshape2)
 library(grid)
 library(gridExtra)
+#library(tmap)
+#library(leaflet)
 
 
 dataUrl <- a(href="https://data.humdata.org/dataset/novel-coronavirus-2019-ncov-cases",  
@@ -35,8 +37,9 @@ dashboardPagePlus(
       menuItem("Charts", tabName = "chart", icon = icon("fas fa-chart-pie", lib = "font-awesome"),
                menuSubItem("Kenya", tabName = "kenya"),
                menuSubItem("World", tabName = "world")),
-      #menuItem("Map", tabName = "map",icon = icon("fas fa-globe-africa", lib = "font-awesome"))
+      menuItem("World Map", tabName = "map",icon = icon("fas fa-globe-africa", lib = "font-awesome")),
       menuItem("About", tabName = "about",icon = icon("fas fa-info-circle", lib = "font-awesome"))
+      
 
     )
   
@@ -188,10 +191,15 @@ dashboardPagePlus(
                 )
                 
                 )
-      )
+      ),
+      
+      tabItem("map",
+              fluidRow(
+                leafletOutput("world_tmap", height = 700)
+              ))
   
     )
-    ), dashboardFooter(right_text = "Last updated on 11/05/2020 07.47AM")
+    ), dashboardFooter(right_text = "Last updated on 19/05/2020 07.47AM")
   )
 
 
