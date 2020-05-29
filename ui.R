@@ -15,6 +15,7 @@ library(dplyr)
 library(reshape2)
 library(grid)
 library(gridExtra)
+library(highcharter)
 #library(tmap)
 #library(leaflet)
 
@@ -195,7 +196,7 @@ dashboardPagePlus(
       
       tabItem("map",
               fluidRow(
-                leafletOutput("world_tmap", height = 700)
+              withSpinner(  highchartOutput("world_tmap", height = 700))
               ))
   
     )

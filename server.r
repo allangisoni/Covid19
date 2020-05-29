@@ -11,6 +11,7 @@ library(gridExtra)
 library(treemapify)
 library(directlabels)
 library(rsconnect)
+library(highcharter)
 #library(tmap)
 #library(leaflet)
 #data("World")
@@ -581,72 +582,59 @@ server <- function(input, output) {
   
   
 
-  
-  world_tb <- formatted_df %>% 
-    filter(date == max_date) %>% 
-    mutate(iso_a3 =countrycode(country,"country.name", "genc3c" ))
-  
-  world_tb <- tibble(iso_a3=world_df$iso_a3, numofdeaths=world_df$numofdeaths)
-  world_tb
-  
-  nullcountries <- sum(is.na(world_df$iso_a3))
-  nullcountries
-  
-  
-
-  
-  world_confirmed_tb <- fom_confirmed_cases %>%
-    filter(date == max_date) %>% 
-    mutate(iso_a3 =countrycode(country,"country.name", "genc3c" ))
-  
-  world_confimed_tb <- tibble(iso_a3=world_confirmed$iso_a3, numofcases=world_confirmed$numofcases)
-  world_confimed_tb
-  
-  cnullcountries <- sum(is.na(world_confirmed$iso_a3))
-  cnullcountries
-  
-  
-  
-  world_recovered_tb <- fom_recovery_cases %>% 
-    filter(date == max_date) %>% 
-    mutate(iso_a3 =countrycode(country,"country.name", "genc3c" ))
-  world_recovered_tb <-  tibble(iso_a3=world_recovered_tb$iso_a3, numofrecoveries=world_recovered_tb$numofrecoveries)
-  world_recovered_tb
-  
-  alt_worlddata <- World           
-  alt_worlddata <- merge(alt_worlddata, world_tb, by="iso_a3")
-  alt_worlddata <- merge(alt_worlddata, world_confimed_tb, by="iso_a3")
-  alt_worlddata <- merge(alt_worlddata, world_recovered_tb, by="iso_a3")
-  
-
-  alt_worlddata <- alt_worlddata %>% 
-    select(iso_a3,name,area,continent,numofcases, numofdeaths,numofrecoveries)
-  
-  
-  output$world_tmap <- renderLeaflet({
+  output$world_tmap <- renderHighchart({
     
+    
+    
+    world_tb <- formatted_df %>% 
+      filter(date == max_date) 
+ 
+    
+    world_tb <- tibble(country=world_tb$country, numofdeaths=world_tb$numofdeaths)
+    world_tb
 
-  
-  tmap_mode("view")
-  tmap_style("white")
-  tmap_options(bg.color= "#203644")
-  
-  map1 <- tm_shape(alt_worlddata) +
-    tm_polygons(col = "gray41", id="name") +
-    tm_shape(alt_worlddata) +
-    tm_bubbles("numofcases", col="firebrick3", id="name", size =0.3, scale =1.5, popup.vars=c( "Confirmed"="numofcases",
-                                                                                               "Deaths" ="numofdeaths",
-                                                                                               "Recoveries"= "numofrecoveries"))+
-    tm_borders("white", lwd = .5)+
-    tm_scale_bar()+
-    #tm_text("new_continent", size = "area")+
-    tm_format("World")+
-    tm_layout(bg.color = "#203644",outer.bg.color ="#203644" , inner.margins = c(0, .20, .0, .60)) 
-  
-  map1
-  tmap_leaflet(map1) %>%
-  addProviderTiles(providers$Esri.WorldTopoMap)
-  
+    
+    
+    world_confirmed_tb <- fom_confirmed_cases %>%
+      filter(date == max_date)
+
+    
+    world_confimed_tb <- tibble(country=world_confirmed_tb$country, numofcases=world_confirmed_tb$numofcases)
+
+
+    
+    world_recovered_tb <- fom_recovery_cases %>% 
+      filter(date == max_date) 
+
+    world_recovered_tb <-  tibble(country=world_recovered_tb$country, numofrecoveries=world_recovered_tb$numofrecoveries)
+    world_recovered_tb
+    
+   
+    alt_worlddata <- merge(world_tb, world_confimed_tb, by="country")
+    alt_worlddata <- merge(alt_worlddata, world_recovered_tb, by="country")
+    
+    
+    alt_worlddata <- alt_worlddata %>% 
+      select(country,numofcases, numofdeaths,numofrecoveries) 
+    
+    
+    highchart() %>% 
+      hc_chart(backgroundColor="#203644") %>% 
+      hc_add_series_map(worldgeojson,
+                        alt_worlddata,  
+                        value = "numofcases", 
+                        joinBy = c("name", "country"), name="Country",
+                        showInLegend=FALSE) %>% 
+      hc_tooltip(useHTML=TRUE,
+                 headerFormat="",
+                 pointFormat="<b>{point.name}</b><br>
+                                    Cases: {point.numofcases}<br>
+                                    Deaths:{point.numofdeaths}<br>
+                                    Recoveries:{point.numofrecoveries}",
+                 borderWidth=5) %>% 
+      hc_plotOptions(series = list(showInLegend = FALSE)) %>% 
+      hc_colorAxis(minColor = "#595959", maxColor = "#404040", showInLegend=FALSE )
+    
   })
 
   
