@@ -2,6 +2,7 @@ rm(list = ls())
 library(scales)
 library(lubridate)
 library(plotly)
+
 library(tidyr)
 library(dplyr)
 library(DT)
@@ -12,6 +13,7 @@ library(treemapify)
 library(directlabels)
 library(rsconnect)
 library(highcharter)
+#library(countrycode)
 #library(tmap)
 #library(leaflet)
 #data("World")
@@ -19,6 +21,7 @@ library(highcharter)
 options(scipen = 999)
 
 #setwd("C:\\Users\\Allan\\OneDrive\\Documents\\Covid-19 S\\")
+#setwd("C:\\Users\\Domino\\Documents\\Covid19\\")
 #getwd()
 #setwd("C:\\Users\\85036758\\Documents\\Covid19\\")
 df <- read.csv("data/deaths.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -30,14 +33,14 @@ recovery_cases <- read.csv("data/recovered.csv", header = TRUE, stringsAsFactors
 print(df)
 print(confirmed_cases)
 
-server <- function(input, output) { 
+server <- function(input, output, session) { 
   
   
   observeEvent(input$sidebar,{
     addClass(selector = "body", class = "sidebar-collapse")
     removeClass(selector = "body", class = "sidebar-open")
-    })
- 
+  })
+  
   max_date <- "2020-05-20"
   min_date <- "2020-01-22"
   
@@ -84,7 +87,7 @@ server <- function(input, output) {
     as_tibble()
   
   
- 
+  
   
   totalofdeaths  <- formatted_df %>%
     filter(date == max_date) %>%
@@ -127,9 +130,9 @@ server <- function(input, output) {
   covid_df <- cbind.data.frame(country=uniquecountries$country,  confirmed_cases=confirmedplotdata$numofcases,
                                deaths=uniquecountries$numofdeaths, recoveries=recoveryplotdata$numofrecoveries )
   covid_df <- covid_df %>% 
-              rename(Country = country, Confirmed_Cases = confirmed_cases, Deaths=deaths,
-                     Recoveries=recoveries) %>% 
-              mutate(Active =Confirmed_Cases-Deaths-Recoveries)
+    rename(Country = country, Confirmed_Cases = confirmed_cases, Deaths=deaths,
+           Recoveries=recoveries) %>% 
+    mutate(Active =Confirmed_Cases-Deaths-Recoveries)
   
   
   
@@ -169,140 +172,103 @@ server <- function(input, output) {
     )
   })
   
-  output$plot1 <- renderPlotly({
+  output$plot1 <- renderHighchart({
     
-         filcountries <- confirmedplotdata %>% 
-                          top_n(n=5, w=numofcases) 
-                        
-         filcountries <-  as_tibble(filcountries) 
-         print(filcountries)
-         
-        
-        plt1data <-  fom_confirmed_cases %>% 
-                    #filter(date >= "2020-03-14" & country == c(filcountries$country)) %>%
-                    filter(date >= "2020-03-21" & country == c("US")) %>%
-                    arrange(desc(numofcases)) 
-       
-        print(plt1data)
+    pltconfirmdata <- fom_confirmed_cases %>% 
+      filter(date >= min_date) %>%
+      group_by(date) %>% 
+      summarise(numofconfirmedcases= sum(numofcases))%>% 
+      mutate(new_cases = numofconfirmedcases -lag(numofconfirmedcases, default = first(numofconfirmedcases))) 
     
-        pltconfirmdata <- fom_confirmed_cases %>% 
-          filter(date >= min_date) %>%
-          group_by(date) %>% 
-          summarise(numofconfirmedcases= sum(numofcases))%>% 
-          mutate(new_cases = numofconfirmedcases -lag(numofconfirmedcases, default = first(numofconfirmedcases))) 
-        
+    pltconfirmdata <- as.data.frame(pltconfirmdata)
     
-      pt2 <- ggplot(pltconfirmdata, aes(x=ymd(date), numofconfirmedcases, col= "#e6f2ff", group=1, text = paste0( "date:", ymd(date),
-                                                                                                                  "<br>","new_cases:", new_cases,
-                                                                                                                 "<br>", "total cases:", numofconfirmedcases
-                                                                                                        )))+  
-      geom_area(fill="#e6f2ff", col= "#e6f2ff") + 
-      geom_line(col= "#80bfff")+
-      geom_point(col= "#001a33") +
-      scale_x_date(labels = date_format("%b-%d"), breaks = "7 days")+
-      scale_y_continuous(labels = comma)+  
-      #scale_x_date(breaks = "2 days") +
-      labs(#title="Confirmed Cases by Date",
-           x= "",
-           y= "Cases",
-           #subtitle=" Countries", 
-           caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
-      
-      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
-            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
-                                            size = 2, linetype = "dashed"),
-            panel.grid.major.x= element_blank()
-            ) 
+      highchart() %>% 
+      hc_add_series(pltconfirmdata,
+                    "area",
+                    hcaes(y=numofconfirmedcases, x=date), name="Cases") %>% 
+      hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'))%>%
+      hc_yAxis(title = list(text = "Cases")) %>% 
+      hc_tooltip(shared=TRUE, borderWidth=5) %>% 
+      hc_plotOptions(line = list(
+        marker = list(
+          lineWidth = 2,
+          lineColor = NULL
+        )            
+      ))
     
-     ggplotly(pt2, tooltip = "text") %>% config(displayModeBar=FALSE)
+    
+    
+    
     
     
   })
   
-  output$plot2 <- renderPlotly({ 
-    
   
-    pltcountry <-as.data.frame(totalofdeaths) %>% 
-      top_n(n=5, w=numofdeaths) 
+  output$plot2 <- renderHighchart({ 
     
-    pltcountry <- as_tibble(pltcountry)
-    print(pltcountry)
+    pltcountry <- as.data.frame(totalofdeaths)%>% 
+                 top_n(n=5, w=numofdeaths) 
     
-    plotdata1 <- formatted_df%>%
-               filter(date >= "2020-03-21" & country %in% c(pltcountry$country))
+    
+    top_country_deaths <- formatted_df %>% 
+                          filter(country %in% c(pltcountry$country)) %>% 
+                          rename(y=numofdeaths)
+    
+    top_country_deaths <- as.data.frame(top_country_deaths)
+    
+    
+    hc_world_deaths <- highchart() %>% 
+                       hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'))%>%
+                       hc_yAxis(title = list(text = "Deaths")) %>% 
+                       hc_add_series(top_country_deaths,
+                       "line",
+                       hcaes(y=y, x=date, group='country')) %>% 
+                       hc_tooltip(shared=TRUE, borderWidth=5) %>% 
+                       hc_plotOptions(line = list(
+                       marker = list(
+                       lineWidth = 2,
+                       lineColor = NULL
+                       )            
+                       ))
+    
+    
+    
+    hc_world_deaths
+    
+  })
   
-    print(plotdata1)
-    
-    plotdata1$date <- ymd(plotdata1$date )
-    plotdata1$date <- as.Date(plotdata1$date, format = "%Y-%m-%d" )
-    minn <- min(plotdata1$date)
-    maxx <- max(plotdata1$date)
-    
-    
-    pt2 <- ggplot(plotdata1, aes(date, numofdeaths, col= country, group=1,
-                                 text= paste0("country:", country, "<br>","deaths:", numofdeaths,
-                                              "<br>","date:", ymd(date))))+  
-      geom_line(size=0.6, alpha=0.6) +
-      geom_point()+
-      scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
-      scale_y_continuous(labels = comma)+ 
-      labs(#title="Deaths by Date",
-           x= "",
-           y= "Deaths",
-           #subtitle="", 
-           caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
-      
-      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank(),
-            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
-                                            size = 2, linetype = "dashed"),
-            panel.grid.major.x= element_blank())
-    
-    ggplotly(pt2, tooltip = "text")%>%
-      layout(legend = list(
-        orientation = "h",
-        x=0.5,
-        y=-0.5
-      )
-      )%>% config(displayModeBar=FALSE)
-    
-    })
-  
-  output$plot3 <- renderPlotly({
+  output$plot3 <- renderHighchart({
     
     rpltcountry <- as.data.frame( recoveryplotdata) %>% 
-      top_n(n=5, w=numofrecoveries) 
+                   top_n(n=5, w=numofrecoveries) 
     
     rpltcountry <- as_tibble(rpltcountry)
     print(rpltcountry)
     
-    plotdata2 <- fom_recovery_cases%>%
-      filter(date >= "2020-03-21" & country %in% c(rpltcountry$country))
+    plotdata2 <- fom_recovery_cases %>%
+                 filter(date >= "2020-01-22" & country %in% c(rpltcountry$country)) %>% 
+                rename(y=numofrecoveries)
+    
+    print(plotdata2)
+    plotdata2 <- as.data.frame(plotdata2)
     
     
-    pt2 <- ggplot(plotdata2, aes(date, numofrecoveries, col= country,group=1, text= paste0("country:", country, "<br>","recoveries:", numofrecoveries,
-                                                                                    "<br>","date:", ymd(date))))+  
-      geom_line(size=0.6, alpha=0.6) +
-      geom_point()+
-      scale_x_date(breaks = "3 days", labels = date_format("%b-%d")) +
-      scale_y_continuous(labels = comma)+ 
-      labs(#title="Recoveries by Date",
-           x= "",
-           y= "Recoveries",
-           #subtitle="", 
-           caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
-      
-      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "bottom", legend.title = element_blank(),
-            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
-                                            size = 2, linetype = "dashed"),
-            panel.grid.major.x= element_blank())
+    hc_world_recoveries <- highchart() %>% 
+      hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'))%>%
+      hc_yAxis(title = list(text = "Recoveries")) %>% 
+      hc_add_series(plotdata2,
+                    "line",
+                    hcaes(y=y,x=date, group='country')) %>% 
+      hc_tooltip(shared=TRUE, borderWidth=5) %>% 
+      hc_plotOptions(line = list(
+        marker = list(
+          lineWidth = 2,
+          lineColor = NULL
+        )            
+      ))
     
-    ggplotly(pt2, tooltip="text")%>%
-      layout(legend = list(
-        orientation = "h",
-        x=0.5,
-        y=-0.5
-      )
-      )%>% config(displayModeBar=FALSE)
+    
+    hc_world_recoveries
     
   })
   
@@ -315,14 +281,14 @@ server <- function(input, output) {
   )
   output$covidtbl <- DT::renderDataTable(coviddt,
                                          filter = c("none"),
-                                           options = list(pageLength = 10, dom = 'ft',  autoWidth = TRUE), rownames = FALSE)
+                                         options = list(pageLength = 10, dom = 'ft',  autoWidth = TRUE), rownames = FALSE)
   output$plot4 <- renderPlotly({
     
     
     plotdata2 <- fom_confirmed_cases%>%
-                 filter(date >="2020-03-12" & country == c("Kenya")) %>% 
-                 arrange(date) %>% 
-                 mutate(new_cases = numofcases -lag(numofcases, default = first(numofcases)))
+      filter(date >="2020-03-12" & country == c("Kenya")) %>% 
+      arrange(date) %>% 
+      mutate(new_cases = numofcases -lag(numofcases, default = first(numofcases)))
     
     
     pt2 <- ggplot(plotdata2, aes(date, numofcases, group=1, text= paste0( "date:", ymd(date),
@@ -423,14 +389,14 @@ server <- function(input, output) {
   
   output$plot6 <- renderPlotly({
     kenyaplotdata <- formatted_df%>%
-                     filter(date >="2020-03-12" & country == "Kenya") %>% 
-                     arrange(date) %>% 
-                     mutate(new_deaths = numofdeaths -lag(numofdeaths, default = first(numofdeaths)))
+      filter(date >="2020-03-12" & country == "Kenya") %>% 
+      arrange(date) %>% 
+      mutate(new_deaths = numofdeaths -lag(numofdeaths, default = first(numofdeaths)))
     
     kenyapt <- ggplot(kenyaplotdata, aes(date, numofdeaths, group=1,
-                                 text= paste0("date:", ymd(date),
-                                              "<br>","new_deaths:", new_deaths,
-                                              "<br>","total deaths:", numofdeaths)))+  
+                                         text= paste0("date:", ymd(date),
+                                                      "<br>","new_deaths:", new_deaths,
+                                                      "<br>","total deaths:", numofdeaths)))+  
       geom_area(fill="#e6f2ff", col= "#e6f2ff") + 
       geom_line(size=0.6, alpha=0.6,col= "#66b3ff") +
       geom_point(col= "#66b3ff")+
@@ -460,30 +426,30 @@ server <- function(input, output) {
     pltworlddata <- fom_confirmed_cases %>% 
       filter(date >= max_date) 
     
-  
-     ggplot(pltworlddata, aes(area = numofcases, fill=country, label = country)) +
+    
+    ggplot(pltworlddata, aes(area = numofcases, fill=country, label = country)) +
       geom_treemap()+
-     geom_treemap_text(fontface = "italic", colour = "white", place = "centre",
+      geom_treemap_text(fontface = "italic", colour = "white", place = "centre",
                         grow = FALSE) +
-    theme(legend.position = "none")
-        
+      theme(legend.position = "none")
     
     
-
-     
-
+    
+    
+    
+    
   })
   
   
   
   output$plot8 <- renderPlotly({
     
-   
+    
     
     country_rnum <- input$slider_rcountry
     print(country_rnum)
     
-     slt_rcountry <-as.data.frame(recoveryplotdata) %>% 
+    slt_rcountry <-as.data.frame(recoveryplotdata) %>% 
       top_n(n=country_rnum, w=numofrecoveries) 
     
     slt_rcountry <- as_tibble(slt_rcountry)
@@ -493,12 +459,12 @@ server <- function(input, output) {
       filter(country %in% c(slt_rcountry$country))
     
     
-                
+    
     dminn <-as.Date(min_date, format = "%Y-%m-%d")
     dmaxx <-as.Date("2020-05-25", format = "%Y-%m-%d")
     pt8 <- ggplot(plotworldrecoveries, aes(date, numofrecoveries, col=country,group=1, text= paste0( "date:", ymd(date),
-                                                                          "<br>","country:", country,                                    
-                                                                          "<br>","recoveries:", numofrecoveries )))+  
+                                                                                                     "<br>","country:", country,                                    
+                                                                                                     "<br>","recoveries:", numofrecoveries )))+  
       geom_line(size=0.6, alpha=0.6) +
       geom_point()+
       scale_x_date(breaks = "7 days",limits=c(dminn,dmaxx), labels = date_format("%b-%d")) +
@@ -514,10 +480,10 @@ server <- function(input, output) {
                                             size = 2, linetype = "solid"),
             panel.grid.major.x= element_blank())
     #pt8
-     ptdl8 <-direct.label(pt8,method="last.points" )
+    ptdl8 <-direct.label(pt8,method="last.points" )
     
     
-   
+    
     ggplotly(pt8, tooltip="text")%>%
       layout(legend = list(
         orientation = "h",
@@ -528,7 +494,7 @@ server <- function(input, output) {
     
   })
   
-
+  
   
   output$plot9 <- renderPlotly({
     dminn <-as.Date(min_date, format = "%Y-%m-%d")
@@ -539,18 +505,18 @@ server <- function(input, output) {
     
     slt_country <-as.data.frame(totalofdeaths) %>% 
       top_n(n=country_num, w=numofdeaths) 
-      
+    
     slt_country <- as_tibble(slt_country)
- 
+    
     
     plotworlddeaths <- formatted_df%>%
       filter(country %in% c(slt_country$country))
-
-
+    
+    
     
     pt9 <- ggplot(plotworlddeaths, aes(date, numofdeaths, col=country,group=1, text= paste0( "date:", ymd(date),
-                                                                                                    "<br>","country:", country,                                    
-                                                                                                    "<br>","deaths:", numofdeaths )))+  
+                                                                                             "<br>","country:", country,                                    
+                                                                                             "<br>","deaths:", numofdeaths )))+  
       geom_line(size=0.6, alpha=0.6) +
       geom_point()+
       scale_x_date(breaks = "4 days",limits=c(dminn,dmaxx), labels = date_format("%b-%d")) +
@@ -581,41 +547,43 @@ server <- function(input, output) {
   
   
   
-
+  
   output$world_tmap <- renderHighchart({
     
     
     
     world_tb <- formatted_df %>% 
       filter(date == max_date) 
- 
+    
     
     world_tb <- tibble(country=world_tb$country, numofdeaths=world_tb$numofdeaths)
     world_tb
-
+    
     
     
     world_confirmed_tb <- fom_confirmed_cases %>%
       filter(date == max_date)
-
+    
     
     world_confimed_tb <- tibble(country=world_confirmed_tb$country, numofcases=world_confirmed_tb$numofcases)
-
-
+    
+    
     
     world_recovered_tb <- fom_recovery_cases %>% 
       filter(date == max_date) 
-
+    
     world_recovered_tb <-  tibble(country=world_recovered_tb$country, numofrecoveries=world_recovered_tb$numofrecoveries)
     world_recovered_tb
     
-   
+    
     alt_worlddata <- merge(world_tb, world_confimed_tb, by="country")
     alt_worlddata <- merge(alt_worlddata, world_recovered_tb, by="country")
     
     
     alt_worlddata <- alt_worlddata %>% 
-      select(country,numofcases, numofdeaths,numofrecoveries) 
+      mutate(iso_a3 =countrycode(country,"country.name", "genc3c"))  %>% 
+      select(iso_a3, country,numofcases, numofdeaths,numofrecoveries) 
+    
     
     
     highchart() %>% 
@@ -623,7 +591,7 @@ server <- function(input, output) {
       hc_add_series_map(worldgeojson,
                         alt_worlddata,  
                         value = "numofcases", 
-                        joinBy = c("name", "country"), name="Country",
+                        joinBy = c("iso3","iso_a3"), name="Country",
                         showInLegend=FALSE) %>% 
       hc_tooltip(useHTML=TRUE,
                  headerFormat="",
@@ -633,10 +601,14 @@ server <- function(input, output) {
                                     Recoveries:{point.numofrecoveries}",
                  borderWidth=5) %>% 
       hc_plotOptions(series = list(showInLegend = FALSE)) %>% 
-      hc_colorAxis(minColor = "#595959", maxColor = "#404040", showInLegend=FALSE )
+      hc_mapNavigation(enabled = TRUE) %>%
+      hc_credits(enabled = TRUE, 
+                 text = "Sources:Johns Hopkins University Center
+                       for Systems Science and Engineering (JHU CCSE)", style = list(fontSize = "10px")) %>% 
+      hc_colorAxis(minColor = "#e6f7ff", maxColor = "#0099e6", showInLegend=FALSE )
     
   })
-
+  
   
 }
 

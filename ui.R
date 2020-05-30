@@ -16,6 +16,7 @@ library(reshape2)
 library(grid)
 library(gridExtra)
 library(highcharter)
+#library(countrycode)
 #library(tmap)
 #library(leaflet)
 
@@ -49,30 +50,29 @@ dashboardPagePlus(
     tabItems(
       tabItem("dashboard", 
               fluidRow(column(width=3,
-                valueBoxOutput("confirmed", width = NULL),
-                valueBoxOutput("deaths", width=NULL),
-                valueBoxOutput("recoveries" , width=NULL),
-                valueBoxOutput("active" , width=NULL)
+                valueBoxOutput("confirmed", width = 12),
+                valueBoxOutput("deaths", width=12),
+                valueBoxOutput("recoveries", width=12),
+                valueBoxOutput("active", width=12)
                 ),   column(9,
                          gradientBox(
                            title = "Confirmed Cases",width =12, gradientColor = "teal", closable = FALSE,
-                           boxToolSize="sm", footer = withSpinner(plotlyOutput("plot1", height = 350)),
+                           boxToolSize="sm", footer = withSpinner(highchartOutput("plot1", height = 370)),
                            "Since January"))
              ,style="background-color:#203644" ),
              
              fluidRow(column(width=6,
-                             gradientBox(title = "Confirmed Deaths", width =12, gradientColor = "teal", closable = FALSE, boxToolSize="sm", footer = withSpinner(plotlyOutput("plot2", height = 350)), "Top 5 countries" )),
+                             gradientBox(title = "Confirmed Deaths", width =12, gradientColor = "teal", closable = FALSE, boxToolSize="sm", footer = withSpinner(highchartOutput("plot2", height = 350)), "Top 5 countries" )),
                       column(width=6,
-                             gradientBox(title = "Confirmed Recoveries", width =12, gradientColor = "teal", closable = FALSE, boxToolSize="sm", footer = withSpinner(plotlyOutput("plot3", height = 350)), "Top 5 countries" ))),
-             fluidRow( style="margin-top:16px;margin-bottom:8px",
+                             gradientBox(title = "Confirmed Recoveries", width =12, gradientColor = "teal", closable = FALSE, boxToolSize="sm", footer = withSpinner(highchartOutput("plot3", height = 350)), "Top 5 countries" ))),
+             fluidRow(style="margin-top:16px;margin-bottom:8px",
                column(12,
                       box(
                         title = 'COVID Summary', width = NULL,status = "info",
                         div(style = 'overflow-x: scroll', withSpinner(
                            DT::dataTableOutput('covidtbl'))))
                ))
-             
-             
+        
              
       ),
       tabItem("about",
@@ -124,10 +124,10 @@ dashboardPagePlus(
               ),
               fluidRow(style="margin-left:4px;margin-right:4px",
                 column(width=3,
-                              valueBoxOutput("kenya_confirmed", width = NULL)),
-                       column(width=3, valueBoxOutput("kenya_deaths", width=NULL)),
-                       column(width=3, valueBoxOutput("kenya_recoveries" , width=NULL)),
-                       column(width=3, valueBoxOutput("kenya_active" , width=NULL))
+                              valueBoxOutput("kenya_confirmed", width = 12)),
+                       column(width=3, valueBoxOutput("kenya_deaths", width=12)),
+                       column(width=3, valueBoxOutput("kenya_recoveries", width=12)),
+                       column(width=3, valueBoxOutput("kenya_active", width=12))
                               
               ),
               fluidRow(style="margin-left:4px;margin-right:4px",
@@ -196,11 +196,11 @@ dashboardPagePlus(
       
       tabItem("map",
               fluidRow(
-              withSpinner(  highchartOutput("world_tmap", height = 700))
+              withSpinner(  highchartOutput("world_tmap", height = 600))
               ))
   
     )
-    ), dashboardFooter(right_text = "Last updated on 19/05/2020 07.47AM")
+    ), dashboardFooter(right_text = "Last updated on 29/05/2020 07.47AM")
   )
 
 
