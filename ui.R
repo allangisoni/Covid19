@@ -16,7 +16,7 @@ library(reshape2)
 library(grid)
 library(gridExtra)
 library(highcharter)
-#library(countrycode)
+library(countrycode)
 #library(tmap)
 #library(leaflet)
 
@@ -119,7 +119,7 @@ dashboardPagePlus(
               column(6,
                      gradientBox(
                        title = "Confirmed Cases",width =12, gradientColor = "teal", closable = FALSE,
-                       boxToolSize="sm", footer = withSpinner(plotlyOutput("plot4", height = 350)),
+                       boxToolSize="sm", footer = withSpinner(highchartOutput("plot4", height = 350)),
                        "Since March"))
               ),
               fluidRow(style="margin-left:4px;margin-right:4px",
@@ -133,7 +133,7 @@ dashboardPagePlus(
               fluidRow(style="margin-left:4px;margin-right:4px",
                 gradientBox(
                   title = "Deaths",width =12, gradientColor = "teal", closable = FALSE,
-                  boxToolSize="sm", footer = withSpinner(plotlyOutput("plot6", height = 400)),
+                  boxToolSize="sm", footer = withSpinner(highchartOutput("plot6", height = 400)),
                   "Since March")
               )
               ),

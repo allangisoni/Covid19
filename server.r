@@ -13,7 +13,7 @@ library(treemapify)
 library(directlabels)
 library(rsconnect)
 library(highcharter)
-#library(countrycode)
+library(countrycode)
 #library(tmap)
 #library(leaflet)
 #data("World")
@@ -282,39 +282,33 @@ server <- function(input, output, session) {
   output$covidtbl <- DT::renderDataTable(coviddt,
                                          filter = c("none"),
                                          options = list(pageLength = 10, dom = 'ft',  autoWidth = TRUE), rownames = FALSE)
-  output$plot4 <- renderPlotly({
+  output$plot4 <- renderHighchart({
     
     
-    plotdata2 <- fom_confirmed_cases%>%
+    kenyaplotdata <- fom_confirmed_cases%>%
       filter(date >="2020-03-12" & country == c("Kenya")) %>% 
       arrange(date) %>% 
       mutate(new_cases = numofcases -lag(numofcases, default = first(numofcases)))
     
     
-    pt2 <- ggplot(plotdata2, aes(date, numofcases, group=1, text= paste0( "date:", ymd(date),
-                                                                          "<br>","new_cases:", new_cases,
-                                                                          "<br>","total cases:", numofcases)))+  
-      geom_line(size=0.6, alpha=0.6, col= "#66b3ff") +
-      geom_point(col= "#66b3ff")+
-      scale_x_date(breaks = "7 days", labels = date_format("%b-%d")) +
-      labs(#title="Recoveries by Date",
-        x= "",
-        y= "Case count",
-        #subtitle="", 
-        caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
-      
-      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
-            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
-                                            size = 2, linetype = "solid"),
-            panel.grid.major.x= element_blank())
+    hc_kenya_cases <- highchart() %>% 
+      hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'))%>%
+      hc_yAxis(title = list(text = "Cases")) %>% 
+      hc_add_series(kenyaplotdata,
+                    "area",
+                    hcaes(y=numofcases,x=date), name="Cases") %>% 
+      hc_tooltip(shared=FALSE, borderWidth=5) %>% 
+      hc_plotOptions(line = list(
+        marker = list(
+          lineWidth = 2,
+          lineColor = NULL
+        )            
+      ))
     
-    ggplotly(pt2, tooltip="text")%>%
-      layout(legend = list(
-        orientation = "h",
-        x=0.5,
-        y=-0.5
-      )
-      )%>% config(displayModeBar=FALSE)
+    
+    hc_kenya_cases
+    
+    
     
   })
   
@@ -387,38 +381,32 @@ server <- function(input, output, session) {
     )
   })
   
-  output$plot6 <- renderPlotly({
-    kenyaplotdata <- formatted_df%>%
+  output$plot6 <- renderHighchart({
+    
+    kenyadeathsplotdata <- formatted_df%>%
       filter(date >="2020-03-12" & country == "Kenya") %>% 
       arrange(date) %>% 
       mutate(new_deaths = numofdeaths -lag(numofdeaths, default = first(numofdeaths)))
+  
+    hc_kenya_deaths <- highchart() %>% 
+      hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'))%>%
+      hc_yAxis(title = list(text = "Cases")) %>% 
+      hc_add_series(kenyadeathsplotdata,
+                    "line",
+                    hcaes(y=numofdeaths,x=date), name="Deaths", showInLegend=FALSE) %>% 
+      hc_tooltip(shared=FALSE, borderWidth=5) %>% 
+      hc_plotOptions(line = list(
+        marker = list(
+          lineWidth = 2,
+          lineColor = NULL
+        )            
+      ))
     
-    kenyapt <- ggplot(kenyaplotdata, aes(date, numofdeaths, group=1,
-                                         text= paste0("date:", ymd(date),
-                                                      "<br>","new_deaths:", new_deaths,
-                                                      "<br>","total deaths:", numofdeaths)))+  
-      geom_area(fill="#e6f2ff", col= "#e6f2ff") + 
-      geom_line(size=0.6, alpha=0.6,col= "#66b3ff") +
-      geom_point(col= "#66b3ff")+
-      scale_x_date(breaks = "7 days", labels = date_format("%b-%d")) +
-      labs(#title="Deaths by Date",
-        x= "",
-        y= "Deaths",
-        #subtitle="", 
-        caption="source: Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)") +
+    
+    hc_kenya_deaths
+    
       
-      theme(axis.text.x = element_text(angle=85, vjust=0.5), legend.position = "none", legend.title = element_blank(),
-            panel.background = element_rect(fill = "#f2f2f2", colour = "#333333",
-                                            size = 2, linetype = "dashed"),
-            panel.grid.major.x= element_blank())
-    
-    ggplotly(kenyapt, tooltip = "text")%>%
-      layout(legend = list(
-        orientation = "h",
-        x=0.5,
-        y=-0.5
-      )
-      )%>% config(displayModeBar=FALSE)
+   
   })
   
   output$plot7 <- renderPlot({
