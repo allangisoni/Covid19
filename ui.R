@@ -16,7 +16,7 @@ library(reshape2)
 library(grid)
 library(gridExtra)
 library(highcharter)
-library(countrycode)
+#library(countrycode)
 #library(tmap)
 #library(leaflet)
 
@@ -143,7 +143,7 @@ dashboardPagePlus(
                 column(12,
                        gradientBox(
                          title = "Global",width =12, gradientColor = "teal", closable = FALSE,
-                         boxToolSize="sm", footer = withSpinner(plotOutput("plot7", height = 450)),
+                         boxToolSize="sm", footer = withSpinner(highchartOutput("plot7", height = 450)),
                          "Confirmed cases by country"))),
               fluidRow(
                 boxPlus(
@@ -197,6 +197,9 @@ dashboardPagePlus(
       tabItem("map",
               fluidRow(
               withSpinner(  highchartOutput("world_tmap", height = 600))
+              ),
+              fluidRow(
+              column(  width=12, style="height:80px")  
               ))
   
     )

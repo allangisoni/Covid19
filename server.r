@@ -13,7 +13,7 @@ library(treemapify)
 library(directlabels)
 library(rsconnect)
 library(highcharter)
-library(countrycode)
+#library(countrycode)
 #library(tmap)
 #library(leaflet)
 #data("World")
@@ -30,6 +30,12 @@ confirmed_cases <- read.csv("data/confirmed.csv", header = TRUE, stringsAsFactor
 #confirmed_cases <- read.csv("data\\confirmed.csv", header = TRUE, stringsAsFactors = FALSE)
 recovery_cases <- read.csv("data/recovered.csv", header = TRUE, stringsAsFactors = FALSE)
 #recovery_cases <- read.csv("data\\recovered.csv", header = TRUE, stringsAsFactors = FALSE)
+countryisonames <- read.csv("data/countryisonames.csv", header = TRUE, stringsAsFactors = FALSE)
+
+countryisonames <- countryisonames %>% 
+  select(iso_a3, country)
+
+
 print(df)
 print(confirmed_cases)
 
@@ -41,12 +47,12 @@ server <- function(input, output, session) {
     removeClass(selector = "body", class = "sidebar-open")
   })
   
-  max_date <- "2020-05-20"
+  max_date <- "2020-06-01"
   min_date <- "2020-01-22"
   
   
   formatted_df <- df %>%
-    gather(date, numofdeaths, 'X43852':'X43971', convert = TRUE) %>%
+    gather(date, numofdeaths, 'X43852':'X43983', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -59,7 +65,7 @@ server <- function(input, output, session) {
   summary(formatted_df)
   
   fom_confirmed_cases<- confirmed_cases %>%
-    gather(date, numofcases, 'X43852':'X43971', convert = TRUE) %>%
+    gather(date, numofcases, 'X43852':'X43983', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -70,7 +76,7 @@ server <- function(input, output, session) {
   
   
   fom_recovery_cases<- recovery_cases %>%
-    gather(date, numofrecoveries, 'X43852':'X43971', convert = TRUE) %>%
+    gather(date, numofrecoveries, 'X43852':'X43983', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -185,10 +191,13 @@ server <- function(input, output, session) {
       highchart() %>% 
       hc_add_series(pltconfirmdata,
                     "area",
-                    hcaes(y=numofconfirmedcases, x=date), name="Cases") %>% 
-      hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'))%>%
+                    hcaes(y=numofconfirmedcases, x=date), showInLegend=FALSE ) %>% 
+      hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%b  %d', week='%b %d'))%>%
       hc_yAxis(title = list(text = "Cases")) %>% 
-      hc_tooltip(shared=TRUE, borderWidth=5) %>% 
+      hc_tooltip(shared=TRUE, borderWidth=5,
+                 pointFormat="<br>
+                              <b>Total:</b> {point.numofconfirmedcases:,.0f} <br>
+                              <b>New:</b> {point.new_cases:,.0f}") %>% 
       hc_plotOptions(line = list(
         marker = list(
           lineWidth = 2,
@@ -218,7 +227,7 @@ server <- function(input, output, session) {
     
     
     hc_world_deaths <- highchart() %>% 
-                       hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'))%>%
+                       hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%b  %d', week='%b %d'))%>%
                        hc_yAxis(title = list(text = "Deaths")) %>% 
                        hc_add_series(top_country_deaths,
                        "line",
@@ -254,7 +263,7 @@ server <- function(input, output, session) {
     
     
     hc_world_recoveries <- highchart() %>% 
-      hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'))%>%
+      hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%b  %d', week='%b %d'))%>%
       hc_yAxis(title = list(text = "Recoveries")) %>% 
       hc_add_series(plotdata2,
                     "line",
@@ -296,8 +305,11 @@ server <- function(input, output, session) {
       hc_yAxis(title = list(text = "Cases")) %>% 
       hc_add_series(kenyaplotdata,
                     "area",
-                    hcaes(y=numofcases,x=date), name="Cases") %>% 
-      hc_tooltip(shared=FALSE, borderWidth=5) %>% 
+                    hcaes(y=numofcases,x=date), showInLegend=FALSE) %>% 
+      hc_tooltip(shared=FALSE, borderWidth=5,
+                 pointFormat="<br>
+                              <b>Total:</b> {point.numofcases:,.0f} <br>
+                              <b>New:</b> {point.new_cases:,.0f}") %>% 
       hc_plotOptions(line = list(
         marker = list(
           lineWidth = 2,
@@ -390,11 +402,14 @@ server <- function(input, output, session) {
   
     hc_kenya_deaths <- highchart() %>% 
       hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'))%>%
-      hc_yAxis(title = list(text = "Cases")) %>% 
+      hc_yAxis(title = list(text = "Deaths")) %>% 
       hc_add_series(kenyadeathsplotdata,
                     "line",
                     hcaes(y=numofdeaths,x=date), name="Deaths", showInLegend=FALSE) %>% 
-      hc_tooltip(shared=FALSE, borderWidth=5) %>% 
+      hc_tooltip(shared=FALSE, borderWidth=5,
+                 pointFormat="<br>
+                              <b>Total:</b> {point.numofdeaths:,.0f} <br>
+                              <b>New:</b> {point.new_deaths:,.0f}") %>% 
       hc_plotOptions(line = list(
         marker = list(
           lineWidth = 2,
@@ -409,21 +424,22 @@ server <- function(input, output, session) {
    
   })
   
-  output$plot7 <- renderPlot({
+  output$plot7 <- renderHighchart({
     
     pltworlddata <- fom_confirmed_cases %>% 
       filter(date >= max_date) 
     
+    hc_world_treemap <- highchart() %>% 
+                        hc_add_series(pltworlddata, "treemap", 
+                                      hcaes(x=country, value=numofcases)) %>% 
+                         hc_colorAxis(stops= color_stops(n=10), showInLegend=FALSE)
+    hc_world_treemap
     
-    ggplot(pltworlddata, aes(area = numofcases, fill=country, label = country)) +
-      geom_treemap()+
-      geom_treemap_text(fontface = "italic", colour = "white", place = "centre",
-                        grow = FALSE) +
-      theme(legend.position = "none")
-    
-    
-    
-    
+    #ggplot(pltworlddata, aes(area = numofcases, fill=country, label = country)) +
+     # geom_treemap()+
+      #geom_treemap_text(fontface = "italic", colour = "white", place = "centre",
+       #                 grow = FALSE) +
+      #theme(legend.position = "none")
     
     
   })
@@ -449,7 +465,7 @@ server <- function(input, output, session) {
     
     
     dminn <-as.Date(min_date, format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-05-25", format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-06-03", format = "%Y-%m-%d")
     pt8 <- ggplot(plotworldrecoveries, aes(date, numofrecoveries, col=country,group=1, text= paste0( "date:", ymd(date),
                                                                                                      "<br>","country:", country,                                    
                                                                                                      "<br>","recoveries:", numofrecoveries )))+  
@@ -486,7 +502,7 @@ server <- function(input, output, session) {
   
   output$plot9 <- renderPlotly({
     dminn <-as.Date(min_date, format = "%Y-%m-%d")
-    dmaxx <-as.Date("2020-05-25", format = "%Y-%m-%d")
+    dmaxx <-as.Date("2020-06-03", format = "%Y-%m-%d")
     
     country_num <- input$slider_country
     print(country_num)
@@ -566,10 +582,11 @@ server <- function(input, output, session) {
     
     alt_worlddata <- merge(world_tb, world_confimed_tb, by="country")
     alt_worlddata <- merge(alt_worlddata, world_recovered_tb, by="country")
+    alt_worlddata <- merge(alt_worlddata, countryisonames, by="country" )
     
     
     alt_worlddata <- alt_worlddata %>% 
-      mutate(iso_a3 =countrycode(country,"country.name", "genc3c"))  %>% 
+      #mutate(iso_a3 =countrycode(country,"country.name", "genc3c"))  %>% 
       select(iso_a3, country,numofcases, numofdeaths,numofrecoveries) 
     
     

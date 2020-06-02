@@ -31,6 +31,10 @@ confirmed_cases <- read.csv("data/confirmed.csv", header = TRUE, stringsAsFactor
 #confirmed_cases <- read.csv("data\\confirmed.csv", header = TRUE, stringsAsFactors = FALSE)
 recovery_cases <- read.csv("data/recovered.csv", header = TRUE, stringsAsFactors = FALSE)
 #recovery_cases <- read.csv("data\\recovered.csv", header = TRUE, stringsAsFactors = FALSE)
+countryisonames <- read.csv("data/countryisonames.csv", header = TRUE, stringsAsFactors = FALSE)
+
+countryisonames <- countryisonames %>% 
+                   select(iso_a3, country)
 
 
 
@@ -111,12 +115,19 @@ world_recovered_tb
 #alt_worlddata <- merge(alt_worlddata, world_tb, by="iso_a3")
 alt_worlddata <- merge(world_tb, world_confimed_tb, by="country")
 alt_worlddata <- merge(alt_worlddata, world_recovered_tb, by="country")
+alt_worlddata <- merge(alt_worlddata, countryisonames, by="country" )
 
 
 alt_worlddata <- alt_worlddata %>% 
-  mutate(iso_a3 =countrycode(country,"country.name", "genc3c")) %>% 
+  # mutate(iso_a3 =countrycode(country,"country.name", "genc3c")) %>% 
   select(iso_a3,country,numofcases, numofdeaths,numofrecoveries)
-  
+
+#isoCountryNames <- tibble(iso_a3=alt_worlddata$iso_a3, country=alt_worlddata$country)
+
+##isoCountryNames
+
+#write.csv(isoCountryNames, file="countryisonames.csv", append = TRUE, sep = ",")
+#?write.csv()
 
 
 highchart() %>% 
