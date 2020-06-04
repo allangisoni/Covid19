@@ -203,7 +203,7 @@ dashboardPagePlus(
               ))
   
     )
-    ), dashboardFooter(right_text = "Last updated on 29/05/2020 07.47AM")
+    ), dashboardFooter(right_text = "Last updated on 04/06/2020 07.47AM")
   )
 
 
