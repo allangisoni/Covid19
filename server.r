@@ -2,7 +2,6 @@ rm(list = ls())
 library(scales)
 library(lubridate)
 library(plotly)
-
 library(tidyr)
 library(dplyr)
 library(DT)
@@ -47,12 +46,12 @@ server <- function(input, output, session) {
     removeClass(selector = "body", class = "sidebar-open")
   })
   
-  max_date <- "2020-06-03"
+  max_date <- "2020-06-08"
   min_date <- "2020-01-22"
   
   
   formatted_df <- df %>%
-    gather(date, numofdeaths, 'X43852':'X43985', convert = TRUE) %>%
+    gather(date, numofdeaths, 'X43852':'X43990', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -65,7 +64,7 @@ server <- function(input, output, session) {
   summary(formatted_df)
   
   fom_confirmed_cases<- confirmed_cases %>%
-    gather(date, numofcases, 'X43852':'X43985', convert = TRUE) %>%
+    gather(date, numofcases, 'X43852':'X43990', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -76,7 +75,7 @@ server <- function(input, output, session) {
   
   
   fom_recovery_cases<- recovery_cases %>%
-    gather(date, numofrecoveries, 'X43852':'X43985', convert = TRUE) %>%
+    gather(date, numofrecoveries, 'X43852':'X43990', convert = TRUE) %>%
     mutate(date = sub("X", " ", date))  %>%
     rename(country = Country.Region)  %>%
     mutate(date = as.numeric(date)) %>%
@@ -431,8 +430,11 @@ server <- function(input, output, session) {
     
     hc_world_treemap <- highchart() %>% 
                         hc_add_series(pltworlddata, "treemap", 
-                                      hcaes(x=country, value=numofcases)) %>% 
-                         hc_colorAxis(stops= color_stops(n=10), showInLegend=FALSE)
+                                      hcaes(x=country, value=numofcases),
+                                     colors = pltworlddata$country) %>% 
+                         hc_colorAxis(minColor = "#FFFFFF",
+                                      maxColor = "#ff3300"
+                                     )
     hc_world_treemap
     
     #ggplot(pltworlddata, aes(area = numofcases, fill=country, label = country)) +
@@ -601,9 +603,9 @@ server <- function(input, output, session) {
       hc_tooltip(useHTML=TRUE,
                  headerFormat="",
                  pointFormat="<b>{point.name}</b><br>
-                                    Cases: {point.numofcases}<br>
-                                    Deaths:{point.numofdeaths}<br>
-                                    Recoveries:{point.numofrecoveries}",
+                                    Cases: {point.numofcases:,.0f}<br>
+                                    Deaths:{point.numofdeaths:,.0f}<br>
+                                    Recoveries:{point.numofrecoveries:,.0f}",
                  borderWidth=5) %>% 
       hc_plotOptions(series = list(showInLegend = FALSE)) %>% 
       hc_mapNavigation(enabled = TRUE) %>%

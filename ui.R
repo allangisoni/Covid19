@@ -20,6 +20,7 @@ library(highcharter)
 #library(tmap)
 #library(leaflet)
 
+options(shiny.port=4640)
 
 dataUrl <- a(href="https://data.humdata.org/dataset/novel-coronavirus-2019-ncov-cases",  
                     "Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE)." )
@@ -203,7 +204,7 @@ dashboardPagePlus(
               ))
   
     )
-    ), dashboardFooter(right_text = "Last updated on 04/06/2020 07.47AM")
+    ), dashboardFooter(right_text = "Last updated on 09/06/2020 07.47AM")
   )
 
 
